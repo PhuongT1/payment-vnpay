@@ -25,12 +25,6 @@
       "schemaVersion": "3.22"
     }
   },
-  "engines": {
-    "npm": ">=10.0.0 <11.0.0",
-    "node": ">=22.0.0 <23.0.0",
-    "pnpm": ">=10.0.0 <11.0.0",
-    "yarn": "*"
-  },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@saleor/app-sdk": "1.5.0",
