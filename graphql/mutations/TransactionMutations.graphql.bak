@@ -1,0 +1,107 @@
+# Transaction mutations for MoMo payment
+
+mutation TransactionInitialize($id: ID!, $amount: PositiveDecimal!, $action: TransactionActionEnum!, $data: JSON) {
+  transactionInitialize(
+    id: $id
+    amount: $amount
+    action: $action
+    paymentGateway: { id: "app.saleor.momo", data: $data }
+  ) {
+    transaction {
+      id
+      chargedAmount {
+        amount
+        currency
+      }
+      actions
+    }
+    transactionEvent {
+      id
+      pspReference
+      message
+      createdAt
+    }
+    data
+    errors {
+      field
+      message
+      code
+    }
+  }
+}
+
+mutation TransactionProcess($id: ID!, $data: JSON) {
+  transactionProcess(
+    id: $id
+    data: $data
+  ) {
+    transaction {
+      id
+      chargedAmount {
+        amount
+        currency
+      }
+      authorizedAmount {
+        amount
+        currency
+      }
+      actions
+    }
+    transactionEvent {
+      id
+      pspReference
+      message
+      createdAt
+    }
+    data
+    errors {
+      field
+      message
+      code
+    }
+  }
+}
+
+mutation TransactionEventReport(
+  $id: ID!
+  $type: TransactionEventTypeEnum!
+  $amount: PositiveDecimal!
+  $pspReference: String!
+  $message: String
+  $externalUrl: String
+) {
+  transactionEventReport(
+    id: $id
+    type: $type
+    amount: $amount
+    pspReference: $pspReference
+    message: $message
+    externalUrl: $externalUrl
+  ) {
+    transaction {
+      id
+      chargedAmount {
+        amount
+        currency
+      }
+      authorizedAmount {
+        amount
+        currency
+      }
+      actions
+    }
+    transactionEvent {
+      id
+      type
+      pspReference
+      message
+      externalUrl
+      createdAt
+    }
+    errors {
+      field
+      message
+      code
+    }
+  }
+}

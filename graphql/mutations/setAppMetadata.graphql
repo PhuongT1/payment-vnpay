@@ -1,0 +1,21 @@
+# Set App Metadata mutation
+# Used to save VNPay configurations to Saleor's metadata storage
+
+mutation SetAppMetadata($id: ID!, $input: [MetadataInput!]!) {
+  updateMetadata(id: $id, input: $input) {
+    item {
+      ... on App {
+        id
+        metadata {
+          key
+          value
+        }
+      }
+    }
+    errors {
+      field
+      message
+      code
+    }
+  }
+}

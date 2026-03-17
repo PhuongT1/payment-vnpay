@@ -1,0 +1,53 @@
+{
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "env": {
+    "NEXT_PUBLIC_SALEOR_API_URL": {
+      "description": "Your Saleor GraphQL API endpoint (e.g., https://your-store.saleor.cloud/graphql/)",
+      "required": true
+    },
+    "APP_API_BASE_URL": {
+      "description": "Your app's public URL for webhooks (e.g., https://your-app.vercel.app)",
+      "required": true
+    },
+    "APP_IFRAME_BASE_URL": {
+      "description": "Your app's public URL for iframe (usually same as APP_API_BASE_URL)",
+      "required": false
+    },
+    "VNPAY_TMN_CODE": {
+      "description": "VNPay Terminal/Merchant Code (optional, can be set via UI)",
+      "required": false
+    },
+    "VNPAY_HASH_SECRET": {
+      "description": "VNPay Hash Secret Key (optional, can be set via UI)",
+      "required": false
+    },
+    "VNPAY_ENVIRONMENT": {
+      "description": "VNPay environment: sandbox or production",
+      "value": "sandbox",
+      "required": false
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
+}

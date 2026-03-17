@@ -1,0 +1,16 @@
+# Get Channels query
+# Fetch all available Saleor channels for configuration mapping
+
+query GetChannels {
+  channels {
+    id
+    name
+    slug
+    isActive
+    currencyCode
+    defaultCountry {
+      code
+      country
+    }
+  }
+}

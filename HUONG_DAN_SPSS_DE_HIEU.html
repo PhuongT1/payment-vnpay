@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng Dẫn Chạy SPSS - Môi Trường Ngủ & Thiết Bị Điện Tử</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 14pt;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            color: #1a5490;
+            font-size: 24pt;
+            text-align: center;
+            border-bottom: 3px solid #1a5490;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #c00000;
+            font-size: 18pt;
+            background: #fff2cc;
+            padding: 10px;
+            border-left: 5px solid #c00000;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #0070c0;
+            font-size: 16pt;
+            margin-top: 20px;
+        }
+        .step {
+            background: #e7f3ff;
+            border-left: 5px solid #0070c0;
+            padding: 15px;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        ol, ul {
+            font-size: 14pt;
+            line-height: 2;
+        }
+        .checkbox {
+            margin: 10px 0;
+            padding: 8px;
+            background: #f8f9fa;
+        }
+        .checkbox input {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table th {
+            background: #1a5490;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .note {
+            background: #e8f4f8;
+            border: 2px dashed #0070c0;
+            padding: 15px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        .highlight {
+            background: yellow;
+            font-weight: bold;
+            padding: 2px 5px;
+        }
+        @media print {
+            body { margin: 0; }
+            .step, .warning, .success { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>📊 HƯỚNG DẪN CHẠY SPSS<br>
+Phân Tích: Môi Trường Ngủ & Thiết Bị Điện Tử</h1>
+
+<div class="note">
+    <strong>📌 DÀNH CHO:</strong> Người mới bắt đầu, không cần biết công nghệ<br>
+    <strong>⏰ THỜI GIAN:</strong> Khoảng 30-45 phút<br>
+    <strong>💻 YÊU CẦU:</strong> Máy tính có cài SPSS
+</div>
+
+<!-- ============================================ -->
+<h2>🔥 PHẦN 1: CHUẨN BỊ DỮ LIỆU (5 phút)</h2>
+
+<div class="step">
+<h3>Bước 1.1: Tải dữ liệu từ Google Sheets về máy</h3>
+<ol>
+    <li>Mở trình duyệt (Chrome, Edge, Safari...)</li>
+    <li>Vào link Google Sheets đã được chia sẻ</li>
+    <li>Nhìn lên góc trái màn hình → Click chữ <strong>"File"</strong></li>
+    <li>Chọn <strong>"Download"</strong> (Tải xuống)</li>
+    <li>Chọn <strong>"Microsoft Excel (.xlsx)"</strong></li>
+    <li>File sẽ tự động tải về thư mục <span class="highlight">Downloads</span> (Tải xuống)</li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã tải xong file Excel
+</div>
+</div>
+
+<div class="step">
+<h3>Bước 1.2: Đổi tên file cho dễ nhớ</h3>
+<ol>
+    <li>Mở thư mục <strong>Downloads</strong> (Tải xuống)</li>
+    <li>Tìm file vừa tải (tên dài, có đuôi .xlsx)</li>
+    <li>Click chuột phải vào file → Chọn <strong>"Rename"</strong> (Đổi tên)</li>
+    <li>Đặt tên mới: <span class="highlight">DuLieuMatNgu.xlsx</span></li>
+    <li>Nhấn Enter</li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã đổi tên file thành "DuLieuMatNgu.xlsx"
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>🔥 PHẦN 2: MỞ SPSS VÀ IMPORT DỮ LIỆU (5 phút)</h2>
+
+<div class="step">
+<h3>Bước 2.1: Mở phần mềm SPSS</h3>
+<ol>
+    <li>Tìm icon <strong>IBM SPSS Statistics</strong> trên màn hình Desktop</li>
+    <li>Double-click (nhấp đúp chuột) vào icon</li>
+    <li>Đợi phần mềm khởi động (màn hình trắng hiện ra)</li>
+    <li>Có thể có cửa sổ nhỏ hỏi "What would you like to do?" → Click <strong>Cancel</strong></li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> SPSS đã mở
+</div>
+</div>
+
+<div class="step">
+<h3>Bước 2.2: Mở file Excel trong SPSS</h3>
+<ol>
+    <li>Nhìn lên thanh menu phía trên → Click <strong>"File"</strong></li>
+    <li>Chọn <strong>"Open"</strong> (Mở)</li>
+    <li>Chọn <strong>"Data..."</strong></li>
+    <li>Cửa sổ mới hiện ra:</li>
+    <ul>
+        <li>Dưới cùng bên phải có ô <strong>"Files of type"</strong></li>
+        <li>Click vào ô này → Chọn <strong>"Excel (*.xls, *.xlsx, *.xlsm)"</strong></li>
+    </ul>
+    <li>Bây giờ tìm đến thư mục <strong>Downloads</strong> bên trái</li>
+    <li>Click vào file <strong>"DuLieuMatNgu.xlsx"</strong></li>
+    <li>Click nút <strong>"Open"</strong> (Mở)</li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã chọn file Excel
+</div>
+</div>
+
+<div class="step">
+<h3>Bước 2.3: Thiết lập khi mở file</h3>
+<ol>
+    <li>Cửa sổ mới hiện ra với tiêu đề <strong>"Opening Excel Data Source"</strong></li>
+    <li>Tìm dòng <strong>"Read variable names from the first row of data"</strong></li>
+    <li>Đảm bảo có dấu <strong>✓ (tick)</strong> trong ô vuông bên cạnh</li>
+    <li>Nếu chưa có, click vào ô vuông để đánh dấu tick</li>
+    <li>Click nút <strong>"OK"</strong></li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Dữ liệu đã hiện ra trong SPSS
+</div>
+</div>
+
+<div class="success">
+<strong>✅ THÀNH CÔNG!</strong> Bạn sẽ thấy dữ liệu hiện ra dưới dạng bảng, giống Excel.
+</div>
+
+<!-- ============================================ -->
+<h2>🔥 PHẦN 3: KIỂM TRA VÀ THIẾT LẬP (5 phút)</h2>
+
+<div class="step">
+<h3>Bước 3.1: Xem tên các cột dữ liệu</h3>
+<ol>
+    <li>Nhìn xuống phía dưới màn hình, có 2 tab (thẻ):</li>
+    <ul>
+        <li><strong>Data View</strong> = Xem dữ liệu</li>
+        <li><strong>Variable View</strong> = Xem thông tin các cột</li>
+    </ul>
+    <li>Click vào tab <strong>"Variable View"</strong></li>
+    <li>Bạn sẽ thấy danh sách tên các cột (biến):</li>
+    <ul>
+        <li>MoiTruongNgu (Môi trường ngủ)</li>
+        <li>TiengOn (Tiếng ồn)</li>
+        <li>ThoiGianDienTu (Thời gian sử dụng điện tử)</li>
+        <li>MatNgu (Tình trạng mất ngủ)</li>
+        <li>...v.v.</li>
+    </ul>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã thấy danh sách các cột
+</div>
+</div>
+
+<div class="warning">
+<strong>⚠️ LƯU Ý:</strong> Tên cột KHÔNG có dấu tiếng Việt và không có khoảng trắng. <br>
+Ví dụ: "MoiTruongNgu" thay vì "Môi trường ngủ"
+</div>
+
+<!-- ============================================ -->
+<h2>🔥 PHẦN 4: CHẠY PHÂN TÍCH - BẢNG ĐẶC ĐIỂM (10 phút)</h2>
+
+<div class="step">
+<h3>Bước 4.1: Phân tích tần suất (Frequencies)</h3>
+<p><strong>Mục đích:</strong> Xem có bao nhiêu người có môi trường ngủ tốt/trung bình/kém</p>
+
+<ol>
+    <li>Nhìn lên thanh menu → Click <strong>"Analyze"</strong> (Phân tích)</li>
+    <li>Di chuột xuống <strong>"Descriptive Statistics"</strong> (Thống kê mô tả)</li>
+    <li>Click <strong>"Frequencies"</strong> (Tần suất)</li>
+    <li>Cửa sổ mới hiện ra, có 2 ô:</li>
+    <ul>
+        <li>Ô bên TRÁI: Danh sách tất cả các cột</li>
+        <li>Ô bên PHẢI: Các cột được chọn để phân tích</li>
+    </ul>
+    <li>Ở ô bên TRÁI, tìm và click vào:</li>
+    <ul>
+        <li>MoiTruongNgu</li>
+        <li>TiengOn</li>
+        <li>AnhSang</li>
+        <li>SuDungDienTu</li>
+    </ul>
+    <li>Sau khi click, click nút <strong>►</strong> (mũi tên ở giữa) để chuyển sang bên phải</li>
+    <li>Click nút <strong>"OK"</strong> ở dưới cùng</li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã chạy Frequencies
+</div>
+</div>
+
+<div class="success">
+<strong>✅ KẾT QUẢ:</strong> Một cửa sổ mới mở ra tên là <strong>"Output"</strong> (Kết quả).<br>
+Bạn sẽ thấy các bảng hiển thị:
+<ul>
+    <li>Cột <strong>Frequency</strong> = Số lượng người</li>
+    <li>Cột <strong>Percent</strong> = Tỷ lệ %</li>
+</ul>
+</div>
+
+<div class="step">
+<h3>Bước 4.2: Thống kê mô tả cho thời gian (Descriptives)</h3>
+<p><strong>Mục đích:</strong> Xem trung bình mỗi người dùng điện tử bao nhiêu phút</p>
+
+<ol>
+    <li>Quay lại cửa sổ SPSS chính (có dữ liệu)</li>
+    <li>Click <strong>"Analyze"</strong> → <strong>"Descriptive Statistics"</strong></li>
+    <li>Chọn <strong>"Descriptives"</strong> (khác với Frequencies)</li>
+    <li>Chọn biến <strong>"ThoiGianDienTu"</strong> → Click ►</li>
+    <li>Click nút <strong>"Options..."</strong></li>
+    <li>Tích ✓ vào:</li>
+    <ul>
+        <li>Mean (Trung bình)</li>
+        <li>Std. deviation (Độ lệch chuẩn)</li>
+        <li>Minimum (Nhỏ nhất)</li>
+        <li>Maximum (Lớn nhất)</li>
+    </ul>
+    <li>Click <strong>"Continue"</strong> → Click <strong>"OK"</strong></li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã chạy Descriptives
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>🔥 PHẦN 5: CHẠY PHÂN TÍCH - BẢNG MỐI LIÊN QUAN (10 phút)</h2>
+
+<div class="step">
+<h3>Bước 5.1: Phân tích mối liên quan (Crosstabs + Chi-square)</h3>
+<p><strong>Mục đích:</strong> Xem môi trường ngủ có liên quan đến mất ngủ không</p>
+
+<ol>
+    <li>Click <strong>"Analyze"</strong> → <strong>"Descriptive Statistics"</strong></li>
+    <li>Chọn <strong>"Crosstabs"</strong> (Bảng chéo)</li>
+    <li>Cửa sổ mới hiện ra với 2 ô:</li>
+    <ul>
+        <li><strong>Row(s)</strong> (Hàng): Chọn <strong>MoiTruongNgu</strong> → Click ►</li>
+        <li><strong>Column(s)</strong> (Cột): Chọn <strong>MatNgu</strong> → Click ►</li>
+    </ul>
+    <li>Click nút <strong>"Statistics..."</strong> (Thống kê)</li>
+    <li>Tích ✓ vào:</li>
+    <ul>
+        <li><strong>Chi-square</strong></li>
+        <li><strong>Risk</strong></li>
+    </ul>
+    <li>Click <strong>"Continue"</strong></li>
+    <li>Click nút <strong>"Cells..."</strong></li>
+    <li>Trong phần <strong>Percentages</strong>, tích ✓ vào <strong>"Row"</strong></li>
+    <li>Click <strong>"Continue"</strong> → Click <strong>"OK"</strong></li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã chạy Crosstabs
+</div>
+</div>
+
+<div class="success">
+<strong>✅ CÁCH ĐỌC KẾT QUẢ:</strong>
+<ul>
+    <li>Tìm bảng <strong>"Chi-Square Tests"</strong></li>
+    <li>Nhìn dòng <strong>"Pearson Chi-Square"</strong></li>
+    <li>Xem cột <strong>"Asymp. Sig. (2-sided)"</strong> = p-value</li>
+    <li><strong>Nếu p < 0.05</strong> → Có ý nghĩa thống kê ✅</li>
+    <li><strong>Nếu p ≥ 0.05</strong> → Không có ý nghĩa ❌</li>
+</ul>
+</div>
+
+<div class="note">
+<strong>🔁 LẶP LẠI BƯỚC 5.1</strong> cho các cặp khác:
+<ul>
+    <li>TiengOn vs MatNgu</li>
+    <li>AnhSang vs MatNgu</li>
+    <li>NhietDo vs MatNgu</li>
+</ul>
+</div>
+
+<div class="step">
+<h3>Bước 5.2: So sánh trung bình (T-Test)</h3>
+<p><strong>Mục đích:</strong> So sánh thời gian dùng điện tử giữa người mất ngủ và không mất ngủ</p>
+
+<ol>
+    <li>Click <strong>"Analyze"</strong> → <strong>"Compare Means"</strong></li>
+    <li>Chọn <strong>"Independent-Samples T Test"</strong></li>
+    <li>Cửa sổ mới hiện ra:</li>
+    <ul>
+        <li><strong>Test Variable(s)</strong>: Chọn <strong>ThoiGianDienTu</strong> → Click ►</li>
+        <li><strong>Grouping Variable</strong>: Chọn <strong>MatNgu</strong> → Click ►</li>
+    </ul>
+    <li>Click nút <strong>"Define Groups..."</strong></li>
+    <li>Nhập:</li>
+    <ul>
+        <li><strong>Group 1:</strong> Gõ số <strong>0</strong> (= Không mất ngủ)</li>
+        <li><strong>Group 2:</strong> Gõ số <strong>1</strong> (= Có mất ngủ)</li>
+    </ul>
+    <li>Click <strong>"Continue"</strong> → Click <strong>"OK"</strong></li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã chạy T-Test
+</div>
+</div>
+
+<div class="success">
+<strong>✅ CÁCH ĐỌC KẾT QUẢ:</strong>
+<ul>
+    <li>Tìm bảng <strong>"Group Statistics"</strong> = Trung bình mỗi nhóm</li>
+    <li>Tìm bảng <strong>"Independent Samples Test"</strong></li>
+    <li>Xem cột <strong>"Sig. (2-tailed)"</strong> = p-value</li>
+    <li><strong>Nếu p < 0.05</strong> → Có sự khác biệt có ý nghĩa ✅</li>
+</ul>
+</div>
+
+<!-- ============================================ -->
+<h2>🔥 PHẦN 6: LƯU VÀ EXPORT KẾT QUẢ (5 phút)</h2>
+
+<div class="step">
+<h3>Bước 6.1: Lưu kết quả ra Word</h3>
+<ol>
+    <li>Trong cửa sổ <strong>"Output"</strong> (Kết quả)</li>
+    <li>Tìm bảng muốn lưu</li>
+    <li>Click chuột PHẢI vào bảng</li>
+    <li>Chọn <strong>"Export"</strong></li>
+    <li>Cửa sổ mới hiện ra:</li>
+    <ul>
+        <li><strong>File Name:</strong> Đặt tên (ví dụ: KetQuaSPSS)</li>
+        <li><strong>Save as type:</strong> Chọn <strong>"Word/RTF (*.doc)"</strong></li>
+    </ul>
+    <li>Click <strong>"OK"</strong></li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã lưu ra Word
+</div>
+</div>
+
+<div class="step">
+<h3>Bước 6.2: Lưu file SPSS (để mở lại sau)</h3>
+<ol>
+    <li>Quay lại cửa sổ SPSS chính (có dữ liệu)</li>
+    <li>Click <strong>"File"</strong> → <strong>"Save As"</strong></li>
+    <li>Đặt tên: <strong>DuLieuMatNgu.sav</strong></li>
+    <li>Click <strong>"Save"</strong></li>
+</ol>
+
+<div class="checkbox">
+    <input type="checkbox"> Đã lưu file .sav
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>📋 CHECKLIST HOÀN Thành</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th width="60%">Công việc</th>
+            <th width="20%">Hoàn thành</th>
+            <th width="20%">Ghi chú</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1. Tải dữ liệu từ Google Sheets</td>
+            <td style="text-align: center;">☐</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>2. Mở dữ liệu trong SPSS</td>
+            <td style="text-align: center;">☐</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>3. Chạy Frequencies (Tần suất)</td>
+            <td style="text-align: center;">☐</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>4. Chạy Descriptives (Mô tả)</td>
+            <td style="text-align: center;">☐</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>5. Chạy Crosstabs + Chi-square</td>
+            <td style="text-align: center;">☐</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>6. Chạy T-Test</td>
+            <td style="text-align: center;">☐</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>7. Export kết quả ra Word</td>
+            <td style="text-align: center;">☐</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>8. Lưu file SPSS (.sav)</td>
+            <td style="text-align: center;">☐</td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================ -->
+<h2>🆘 KHẮC PHỤC SỰ CỐ</h2>
+
+<div class="warning">
+<h3>Vấn đề 1: Không tìm thấy file Excel</h3>
+<p><strong>Giải pháp:</strong></p>
+<ul>
+    <li>Mở thư mục Downloads (Tải xuống)</li>
+    <li>Sắp xếp theo ngày tải (Date modified)</li>
+    <li>File mới nhất sẽ ở đầu danh sách</li>
+</ul>
+</div>
+
+<div class="warning">
+<h3>Vấn đề 2: SPSS không mở được file Excel</h3>
+<p><strong>Giải pháp:</strong></p>
+<ul>
+    <li>Đảm bảo file Excel không đang mở trong Excel</li>
+    <li>Đóng Excel nếu đang mở</li>
+    <li>Thử lại từ Bước 2.2</li>
+</ul>
+</div>
+
+<div class="warning">
+<h3>Vấn đề 3: Không thấy kết quả sau khi click OK</h3>
+<p><strong>Giải pháp:</strong></p>
+<ul>
+    <li>Tìm cửa sổ <strong>"Output"</strong> (có thể bị ẩn phía sau)</li>
+    <li>Nhìn xuống thanh taskbar (thanh công việc dưới cùng)</li>
+    <li>Click vào icon SPSS màu đỏ để hiện cửa sổ Output</li>
+</ul>
+</div>
+
+<!-- ============================================ -->
+<h2>📞 LIÊN HỆ HỖ TRỢ</h2>
+
+<div class="note">
+<strong>Nếu gặp khó khăn:</strong>
+<ol>
+    <li>Chụp màn hình (Screenshot) chỗ bị lỗi</li>
+    <li>Ghi lại bước đang làm (Bước 2.3, Bước 4.1...)</li>
+    <li>Liên hệ người hướng dẫn</li>
+</ol>
+</div>
+
+<!-- ============================================ -->
+<h2>✅ HOÀN THÀNH!</h2>
+
+<div class="success" style="text-align: center; font-size: 16pt;">
+<p><strong>🎉 CHÚC MỪNG BẠN ĐÃ HOÀN THÀNH!</strong></p>
+<p>Bây giờ bạn đã có:</p>
+<ul style="text-align: left;">
+    <li>✅ Bảng đặc điểm mẫu nghiên cứu</li>
+    <li>✅ Bảng mối liên quan có p-value</li>
+    <li>✅ File Word chứa kết quả</li>
+    <li>✅ File SPSS để mở lại sau</li>
+</ul>
+<p><strong>Bạn đã làm rất tốt! 👏</strong></p>
+</div>
+
+<hr>
+<p style="text-align: center; color: #666; font-size: 12pt;">
+    <em>Tài liệu này được tạo để hướng dẫn chi tiết từng bước<br>
+    Ngày tạo: 16/03/2026<br>
+    Phiên bản: 1.0</em>
+</p>
+
+</body>
+</html>

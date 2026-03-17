@@ -1,0 +1,17 @@
+# Get App Metadata query
+# Fetch stored VNPay configurations from Saleor
+
+query GetAppMetadata {
+  app {
+    id
+    name
+    metadata {
+      key
+      value
+    }
+    privateMetadata {
+      key
+      value
+    }
+  }
+}
