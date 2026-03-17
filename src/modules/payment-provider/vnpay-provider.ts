@@ -6,12 +6,7 @@
 
 import { VNPayAPI } from "@/lib/vnpay/vnpay-api";
 import { VNPayConfigEntry } from "../payment-app-configuration/input-schemas";
-import {
-  VNPayCreatePaymentRequest,
-  VNPayQueryRequest,
-  VNPayRefundRequest,
-  isVNPayPaymentSuccessful,
-} from "@/lib/vnpay/types";
+import { isVNPayPaymentSuccessful, VNPayIPNResponse } from "@/lib/vnpay/types";
 
 export interface CreatePaymentParams {
   orderId: string;
@@ -81,7 +76,6 @@ export class VNPayProviderClient {
       paymentUrl,
       apiUrl,
       returnUrl: config.redirectUrl,
-      callbackUrl: config.ipnUrl,
     });
   }
 
@@ -90,17 +84,14 @@ export class VNPayProviderClient {
    */
   async createPayment(params: CreatePaymentParams): Promise<PaymentResult> {
     try {
-      const request: VNPayCreatePaymentRequest = {
+      const paymentData = await this.vnpayAPI.createPayment({
         orderId: params.orderId,
         amount: params.amount,
-        locale: "vn",
         orderInfo: params.orderInfo,
         ipAddr: params.ipAddress,
         bankCode: undefined, // Let user choose at VNPay
-        orderType: "other",
-      };
-
-      const paymentData = await this.vnpayAPI.createPayment(request);
+        locale: "vn",
+      });
 
       return {
         success: true,
@@ -121,18 +112,13 @@ export class VNPayProviderClient {
    */
   async queryPayment(params: QueryPaymentParams): Promise<QueryResult> {
     try {
-      const request: VNPayQueryRequest = {
+      const response = await this.vnpayAPI.queryTransaction({
         orderId: params.orderId,
         transactionDate: params.transactionDate,
         ipAddr: params.ipAddress,
-      };
+      });
 
-      const response = await this.vnpayAPI.queryTransaction(request);
-
-      const paid = isVNPayPaymentSuccessful(
-        response.vnp_ResponseCode,
-        response.vnp_TransactionStatus
-      );
+      const paid = isVNPayPaymentSuccessful(response);
 
       return {
         success: true,
@@ -155,17 +141,15 @@ export class VNPayProviderClient {
    */
   async processRefund(params: RefundParams): Promise<RefundResult> {
     try {
-      const request: VNPayRefundRequest = {
+      const response = await this.vnpayAPI.refundTransaction({
         orderId: params.orderId,
-        transId: params.transactionId,
+        transactionNo: params.transactionId,
         amount: params.amount,
         transactionDate: params.transactionDate,
-        ipAddr: params.ipAddress,
+        transactionType: "02", // Full refund
         createdBy: params.createdBy,
-        refundType: "02", // Full refund
-      };
-
-      const response = await this.vnpayAPI.refundTransaction(request);
+        ipAddr: params.ipAddress,
+      });
 
       if (response.vnp_ResponseCode === "00") {
         return {
@@ -196,15 +180,13 @@ export class VNPayProviderClient {
       const testOrderId = `TEST_${Date.now()}`;
       const testDate = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
-      const request: VNPayQueryRequest = {
-        orderId: testOrderId,
-        transactionDate: testDate,
-        ipAddr: "127.0.0.1",
-      };
-
       // This will fail for non-existent order, but will validate credentials
       try {
-        await this.vnpayAPI.queryTransaction(request);
+        await this.vnpayAPI.queryTransaction({
+          orderId: testOrderId,
+          transactionDate: testDate,
+          ipAddr: "127.0.0.1",
+        });
       } catch (error) {
         // If we get a VNPay response (even an error), credentials are valid
         if (error instanceof Error && error.message.includes("vnp_")) {
@@ -232,7 +214,7 @@ export class VNPayProviderClient {
    * Verify IPN signature
    */
   verifyIPNSignature(queryParams: Record<string, string>): boolean {
-    return this.vnpayAPI.verifyIPNSignature(queryParams);
+    return this.vnpayAPI.verifyIPNSignature(queryParams as unknown as VNPayIPNResponse);
   }
 
   /**

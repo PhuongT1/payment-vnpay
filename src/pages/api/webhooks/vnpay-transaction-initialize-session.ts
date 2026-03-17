@@ -4,7 +4,7 @@
  * Follows Saleor Stripe app architecture
  */
 
-import { SaleorAsyncWebhook } from "@saleor/app-sdk/handlers/next";
+import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { saleorApp } from "@/saleor-app";
 import { createClient } from "@/lib/create-graphql-client";
 import { VNPayConfigManager } from "@/modules/payment-app-configuration/config-manager";
@@ -60,8 +60,41 @@ const TransactionInitializeSessionWebhookPayload = `
   }
 `;
 
+/**
+ * Type definition for the webhook payload
+ */
+interface TransactionInitializeSessionPayload {
+  action: {
+    amount: number;
+    currency: string;
+    actionType: string;
+  };
+  sourceObject: {
+    __typename: "Checkout" | "Order";
+    id: string;
+    channel: {
+      id: string;
+      slug: string;
+    };
+    totalPrice?: {
+      gross: {
+        amount: number;
+        currency: string;
+      };
+    };
+    total?: {
+      gross: {
+        amount: number;
+        currency: string;
+      };
+    };
+  };
+  data?: Record<string, unknown> | null;
+  merchantReference: string;
+}
+
 export const transactionInitializeSessionWebhook =
-  new SaleorAsyncWebhook({
+  new SaleorSyncWebhook<TransactionInitializeSessionPayload>({
     name: "VNPay Transaction Initialize Session",
     webhookPath: "api/webhooks/vnpay-transaction-initialize-session",
     event: "TRANSACTION_INITIALIZE_SESSION",

@@ -8,7 +8,8 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 import { saleorApp } from "@/saleor-app";
-import { SALEOR_API_URL_HEADER } from "@saleor/app-sdk/const";
+
+const SALEOR_API_URL_HEADER = "saleor-api-url";
 
 interface VNPayConfig {
   id: string;

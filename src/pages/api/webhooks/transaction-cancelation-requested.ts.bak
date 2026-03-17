@@ -11,7 +11,7 @@ import { saleorApp } from "@/saleor-app";
 export const transactionCancelationRequestedWebhook = new SaleorAsyncWebhook({
   name: "Transaction Cancelation Requested - MoMo",
   webhookPath: "api/webhooks/transaction-cancelation-requested",
-  event: "TRANSACTION_ACTION_REQUEST", // Updated from TRANSACTION_CANCELATION_REQUESTED for SDK compatibility
+  event: "TRANSACTION_CANCELATION_REQUESTED",
   apl: saleorApp.apl,
   query: `
     subscription TransactionCancelationRequested {

@@ -5,10 +5,12 @@
 
 export { AppHeader } from "./AppHeader";
 export { Breadcrumbs } from "./Breadcrumbs";
-export { Channel, ChannelMappingsTable } from "./ChannelMappingsTable";
+export { ChannelMappingsTable } from "./ChannelMappingsTable";
+export type { Channel } from "./ChannelMappingsTable";
 export { ConfigurationForm } from "./ConfigurationForm";
 export { ConfigurationPage } from "./ConfigurationPage";
-export { ConfigurationTable, VNPayConfig } from "./ConfigurationTable";
+export { ConfigurationTable } from "./ConfigurationTable";
+export type { VNPayConfig } from "./ConfigurationTable";
 export { EmptyState } from "./EmptyState";
 export { ManageExtensionPage } from "./ManageExtensionPage";
 export { PageHeading } from "./PageHeading";

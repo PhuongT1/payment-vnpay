@@ -9,7 +9,8 @@ import { saleorApp } from "@/saleor-app";
 import { createClient } from "@/lib/create-graphql-client";
 import { VNPayConfigManager } from "@/modules/payment-app-configuration/config-manager";
 import { VNPayProviderClient } from "@/modules/payment-provider/vnpay-provider";
-import { SALEOR_API_URL_HEADER } from "@saleor/app-sdk/const";
+
+const SALEOR_API_URL_HEADER = "saleor-api-url";
 
 export default async function handler(
   req: NextApiRequest,

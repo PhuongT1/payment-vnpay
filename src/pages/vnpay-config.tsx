@@ -6,7 +6,8 @@
 import { useState, useEffect } from "react";
 import { useAppBridge } from "@saleor/app-sdk/app-bridge";
 import { Box, Button, Input, Text } from "@saleor/macaw-ui";
-import { SALEOR_API_URL_HEADER } from "@saleor/app-sdk/const";
+
+const SALEOR_API_URL_HEADER = "saleor-api-url";
 
 interface ConfigEntry {
   configurationId: string;
@@ -35,7 +36,7 @@ export default function ConfigurationPage() {
   });
 
   // Use localStorage for standalone mode (development only)
-  const saleorApiUrl = appBridgeState?.domain || "standalone-mode";
+  const saleorApiUrl = appBridgeState?.saleorApiUrl || "standalone-mode";
 
   useEffect(() => {
     // Check if running in standalone mode (localhost without Saleor Dashboard)
@@ -133,15 +134,6 @@ export default function ConfigurationPage() {
       const data = await response.json();
 
       if (!data.success) {
-      // Standalone mode: use localStorage
-      if (standaloneMode) {
-        const updatedConfigs = configs.filter(c => c.configurationId !== id);
-        setConfigs(updatedConfigs);
-        localStorage.setItem("vnpay_configs_standalone", JSON.stringify(updatedConfigs));
-        return;
-      }
-
-      // Production mode: use API
         throw new Error(data.error || "Failed to save configuration");
       }
 
@@ -168,6 +160,15 @@ export default function ConfigurationPage() {
     setError(null);
 
     try {
+      // Standalone mode: use localStorage
+      if (standaloneMode) {
+        const updatedConfigs = configs.filter(c => c.configurationId !== id);
+        setConfigs(updatedConfigs);
+        localStorage.setItem("vnpay_configs_standalone", JSON.stringify(updatedConfigs));
+        return;
+      }
+
+      // Production mode: use API
       const response = await fetch(`/api/vnpay-configuration?id=${id}`, {
         method: "DELETE",
         headers: {
@@ -183,23 +184,6 @@ export default function ConfigurationPage() {
 
       await loadConfigs();
     } catch (err) {
-      // In standalone mode, simulate test (or make direct API call)
-      if (standaloneMode) {
-        const config = configs.find(c => c.configurationId === id);
-        if (!config) {
-          alert("❌ Configuration not found");
-          setTestingId(null);
-          return;
-        }
-
-        // Simulate connection test
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        alert(`✅ Connection test (Standalone Mode)\n\nConfiguration: ${config.configurationName}\nEnvironment: ${config.environment}\nPartner Code: ${config.partnerCode}\n\n⚠️ Note: This is a simulated test. Install app in Saleor Dashboard for real testing.`);
-        setTestingId(null);
-        return;
-      }
-
-      // Production mode: use API
       setError(err instanceof Error ? err.message : "Failed to delete configuration");
     }
   };
@@ -223,23 +207,7 @@ export default function ConfigurationPage() {
       if (data.success) {
         alert(`✅ Connection successful!\n\n${data.message}`);
       } else {
-        alStandalone Mode Warning */}
-      {standaloneMode && (
-        <Box
-          padding={4}
-          marginBottom={4}
-          backgroundColor="warning1"
-          borderRadius={4}
-        >
-          <Text variant="bodyStrong">⚠️ Standalone Development Mode</Text>
-          <Text variant="body" marginTop={1}>
-            Running without Saleor Dashboard. Configurations are stored in localStorage (temporary). 
-            Install app in Saleor Dashboard for production use.
-          </Text>
-        </Box>
-      )}
-
-      {/* ert(`❌ Connection failed\n\n${data.message || data.error}`);
+        alert(`❌ Connection failed\n\n${data.message || data.error}`);
       }
     } catch (err) {
       alert(`❌ Test failed\n\n${err instanceof Error ? err.message : "Unknown error"}`);
@@ -268,8 +236,8 @@ export default function ConfigurationPage() {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom={4}>
         <Box>
-          <Text variant="heading" size="large">VNPay Payment Configuration</Text>
-          <Text variant="body" marginTop={1}>
+          <Text size={1}>VNPay Payment Configuration</Text>
+          <Text marginTop={1}>
             Configure VNPay payment gateway credentials and settings
           </Text>
         </Box>
@@ -299,15 +267,15 @@ export default function ConfigurationPage() {
           onSubmit={handleSubmit}
           padding={6}
           marginBottom={4}
-          backgroundColor="surfaceNeutralSubdued"
+          backgroundColor="default2"
           borderRadius={4}
         >
-          <Text variant="bodyStrong" marginBottom={4}>
-            {editingId ? "Edit Configuration" : "New Configuration"}
+          <Text marginBottom={4}>
+            <strong>{editingId ? "Edit Configuration" : "New Configuration"}</strong>
           </Text>
 
-          <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
-            <Box gridColumn="span 2">
+          <Box display="grid" gridTemplateColumns={12} gap={4}>
+            <Box gridColumn="full">
               <Input
                 label="Configuration Name *"
                 value={formData.configurationName || ""}
@@ -336,7 +304,7 @@ export default function ConfigurationPage() {
               required
             />
 
-            <Box gridColumn="span 2">
+            <Box gridColumn="full">
               <Input
                 label="Secret Key (vnp_HashSecret) *"
                 type="password"
@@ -372,7 +340,7 @@ export default function ConfigurationPage() {
 
             <Box>
               <label>
-                <Text variant="caption">Environment *</Text>
+                <Text><small>Environment *</small></Text>
                 <select
                   value={formData.environment}
                   onChange={(e) =>
@@ -408,8 +376,8 @@ export default function ConfigurationPage() {
 
       {/* Configurations List */}
       {configs.length === 0 && !showForm ? (
-        <Box padding={6} backgroundColor="surfaceNeutralSubdued" borderRadius={4}>
-          <Text variant="body" align="center">
+        <Box padding={6} backgroundColor="default2" borderRadius={4}>
+          <Text style={{textAlign: "center"}}>
             No configurations found. Click "Add Configuration" to create one.
           </Text>
         </Box>
@@ -420,17 +388,17 @@ export default function ConfigurationPage() {
               key={config.configurationId}
               padding={4}
               marginBottom={2}
-              backgroundColor="surfaceNeutralSubdued"
+              backgroundColor="default2"
               borderRadius={4}
             >
               <Box display="flex" justifyContent="space-between" alignItems="start">
                 <Box>
-                  <Text variant="bodyStrong">{config.configurationName}</Text>
+                  <Text><strong>{config.configurationName}</strong></Text>
                   <Box display="flex" gap={4} marginTop={2}>
-                    <Text variant="caption">
-                      Partner Code: <code>{config.partnerCode}</code>
+                    <Text>
+                      <small>Partner Code: <code>{config.partnerCode}</code></small>
                     </Text>
-                    <Text variant="caption">
+                    <Text>
                       Environment:{" "}
                       <span
                         style={{
