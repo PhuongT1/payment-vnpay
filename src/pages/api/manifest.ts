@@ -5,6 +5,8 @@ import packageJson from "@/package.json";
 
 import { orderCreatedWebhook } from "./webhooks/order-created";
 import { orderFilterShippingMethodsWebhook } from "./webhooks/order-filter-shipping-methods";
+import { paymentGatewayInitializeSessionWebhook } from "./webhooks/payment-gateway-initialize-session";
+import { transactionInitializeSessionWebhook } from "./webhooks/vnpay-transaction-initialize-session";
 
 /**
  * App SDK helps with the valid Saleor App Manifest creation. Read more:
@@ -81,6 +83,9 @@ export default createManifestHandler({
       webhooks: [
         orderCreatedWebhook.getWebhookManifest(apiBaseURL),
         orderFilterShippingMethodsWebhook.getWebhookManifest(apiBaseURL),
+        // VNPay Payment Webhooks
+        paymentGatewayInitializeSessionWebhook.getWebhookManifest(apiBaseURL),
+        transactionInitializeSessionWebhook.getWebhookManifest(apiBaseURL),
       ],
       /**
        * Optionally, extend Dashboard with custom UIs
