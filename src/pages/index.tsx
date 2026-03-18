@@ -174,12 +174,14 @@ const IndexPage = () => {
     }
   }, [appBridgeState?.saleorApiUrl]);
 
-  // Only run once on mount to prevent infinite re-renders
+  // Load data when app bridge is ready
   useEffect(() => {
-    loadConfigs();
-    loadChannels();
-    loadMappings();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (appBridgeState?.ready) {
+      loadConfigs();
+      loadChannels();
+      loadMappings();
+    }
+  }, [appBridgeState?.ready, loadConfigs, loadChannels, loadMappings]);
 
   const handleAddConfig = async () => {
     try {
