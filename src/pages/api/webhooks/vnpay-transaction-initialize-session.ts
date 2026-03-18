@@ -9,6 +9,10 @@ import { saleorApp } from "@/saleor-app";
 import { createClient } from "@/lib/create-graphql-client";
 import { VNPayConfigManager } from "@/modules/payment-app-configuration/config-manager";
 import { VNPayProviderClient } from "@/modules/payment-provider/vnpay-provider";
+import {
+  TransactionInitializeSessionDocument,
+  TransactionInitializeSessionPayloadFragment,
+} from "@/generated/graphql";
 
 export const config = {
   api: {
@@ -16,90 +20,13 @@ export const config = {
   },
 };
 
-/**
- * GraphQL fragment for transaction initialize session event
- */
-const TransactionInitializeSessionWebhookPayload = `
-  fragment TransactionInitializeSessionWebhookPayload on TransactionInitializeSession {
-    action {
-      amount
-      currency
-      actionType
-    }
-    sourceObject {
-      __typename
-      ... on Checkout {
-        id
-        channel {
-          id
-          slug
-        }
-        totalPrice {
-          gross {
-            amount
-            currency
-          }
-        }
-      }
-      ... on Order {
-        id
-        channel {
-          id
-          slug
-        }
-        total {
-          gross {
-            amount
-            currency
-          }
-        }
-      }
-    }
-    data
-    merchantReference
-  }
-`;
-
-/**
- * Type definition for the webhook payload
- */
-interface TransactionInitializeSessionPayload {
-  action: {
-    amount: number;
-    currency: string;
-    actionType: string;
-  };
-  sourceObject: {
-    __typename: "Checkout" | "Order";
-    id: string;
-    channel: {
-      id: string;
-      slug: string;
-    };
-    totalPrice?: {
-      gross: {
-        amount: number;
-        currency: string;
-      };
-    };
-    total?: {
-      gross: {
-        amount: number;
-        currency: string;
-      };
-    };
-  };
-  data?: Record<string, unknown> | null;
-  merchantReference: string;
-}
-
 export const transactionInitializeSessionWebhook =
-  new SaleorSyncWebhook<TransactionInitializeSessionPayload>({
+  new SaleorSyncWebhook<TransactionInitializeSessionPayloadFragment>({
     name: "VNPay Transaction Initialize Session",
     webhookPath: "api/webhooks/vnpay-transaction-initialize-session",
     event: "TRANSACTION_INITIALIZE_SESSION",
     apl: saleorApp.apl,
-    query: TransactionInitializeSessionWebhookPayload,
+    query: TransactionInitializeSessionDocument,
   });
 
 export default transactionInitializeSessionWebhook.createHandler(

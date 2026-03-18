@@ -1,0 +1,26 @@
+subscription PaymentGatewayInitializeSession {
+  event {
+    ...PaymentGatewayInitializeSessionPayload
+  }
+}
+
+fragment PaymentGatewayInitializeSessionPayload on PaymentGatewayInitializeSession {
+  sourceObject {
+    __typename
+    ... on Checkout {
+      id
+      channel {
+        id
+        slug
+      }
+    }
+    ... on Order {
+      id
+      channel {
+        id
+        slug
+      }
+    }
+  }
+  data
+}

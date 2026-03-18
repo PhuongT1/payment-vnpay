@@ -1,0 +1,44 @@
+subscription TransactionInitializeSession {
+  event {
+    ...TransactionInitializeSessionPayload
+  }
+}
+
+fragment TransactionInitializeSessionPayload on TransactionInitializeSession {
+  action {
+    amount
+    currency
+    actionType
+  }
+  sourceObject {
+    __typename
+    ... on Checkout {
+      id
+      channel {
+        id
+        slug
+      }
+      totalPrice {
+        gross {
+          amount
+          currency
+        }
+      }
+    }
+    ... on Order {
+      id
+      channel {
+        id
+        slug
+      }
+      total {
+        gross {
+          amount
+          currency
+        }
+      }
+    }
+  }
+  data
+  merchantReference
+}

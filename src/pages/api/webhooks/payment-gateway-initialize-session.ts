@@ -17,6 +17,10 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { saleorApp } from "@/saleor-app";
 import { createClient } from "@/lib/create-graphql-client";
+import {
+  PaymentGatewayInitializeSessionDocument,
+  PaymentGatewayInitializeSessionPayloadFragment,
+} from "@/generated/graphql";
 
 export const config = {
   api: {
@@ -24,51 +28,13 @@ export const config = {
   },
 };
 
-/**
- * GraphQL fragment for payment gateway initialize session event
- */
-const PaymentGatewayInitializeSessionWebhookPayload = `
-  fragment PaymentGatewayInitializeSessionWebhookPayload on PaymentGatewayInitializeSession {
-    sourceObject {
-      __typename
-      ... on Checkout {
-        id
-        channel {
-          id
-          slug
-        }
-      }
-      ... on Order {
-        id
-        channel {
-          id
-          slug
-        }
-      }
-    }
-    data
-  }
-`;
-
-interface PaymentGatewayInitializeSessionPayload {
-  sourceObject: {
-    __typename: "Checkout" | "Order";
-    id: string;
-    channel: {
-      id: string;
-      slug: string;
-    };
-  };
-  data?: Record<string, unknown> | null;
-}
-
 export const paymentGatewayInitializeSessionWebhook =
-  new SaleorSyncWebhook<PaymentGatewayInitializeSessionPayload>({
+  new SaleorSyncWebhook<PaymentGatewayInitializeSessionPayloadFragment>({
     name: "VNPay Payment Gateway Initialize Session",
     webhookPath: "api/webhooks/payment-gateway-initialize-session",
     event: "PAYMENT_GATEWAY_INITIALIZE_SESSION",
     apl: saleorApp.apl,
-    query: PaymentGatewayInitializeSessionWebhookPayload,
+    query: PaymentGatewayInitializeSessionDocument,
   });
 
 export default paymentGatewayInitializeSessionWebhook.createHandler(
