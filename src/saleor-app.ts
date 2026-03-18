@@ -1,6 +1,7 @@
 import { APL } from "@saleor/app-sdk/APL";
 import { SaleorApp } from "@saleor/app-sdk/saleor-app";
 import { FileAPL } from "@saleor/app-sdk/APL/file";
+import { UpstashAPL } from "@saleor/app-sdk/APL/upstash";
 
 /**
  * By default auth data are stored in the `.auth-data.json` (FileAPL).
@@ -12,14 +13,22 @@ import { FileAPL } from "@saleor/app-sdk/APL/file";
 export let apl: APL;
 
 switch (process.env.APL) {
-  /**
-   * Depending on env variables, chose what APL to use.
-   * To reduce the footprint, import only these needed
-   *
-   * TODO: See docs
-   */
-  default:
+  case "upstash": {
+    // Upstash Redis - for production deployments (Vercel, Railway, etc.)
+    // Required env vars: UPSTASH_URL, UPSTASH_TOKEN
+    if (!process.env.UPSTASH_URL || !process.env.UPSTASH_TOKEN) {
+      throw new Error("UPSTASH_URL and UPSTASH_TOKEN are required when APL=upstash");
+    }
+    apl = new UpstashAPL({
+      restURL: process.env.UPSTASH_URL,
+      restToken: process.env.UPSTASH_TOKEN,
+    });
+    break;
+  }
+  default: {
+    // FileAPL - for local development only (won't work on Vercel/Railway)
     apl = new FileAPL();
+  }
 }
 
 export const saleorApp = new SaleorApp({
