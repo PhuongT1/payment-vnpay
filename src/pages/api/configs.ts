@@ -1,5 +1,7 @@
 /**
  * API endpoint to manage VNPay configurations
+ * Stores data in Saleor App Private Metadata for persistence
+ * 
  * GET - Get all configurations
  * POST - Create new configuration
  * PUT - Update configuration
@@ -8,23 +10,21 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 import { saleorApp } from "@/saleor-app";
+import { createClient } from "@/lib/create-graphql-client";
 
 const SALEOR_API_URL_HEADER = "saleor-api-url";
+const METADATA_KEY = "vnpay:configs";
 
 interface VNPayConfig {
   id: string;
   name: string;
   tmnCode: string;
-  hashSecret: string;
+  hashSecret?: string; // Only stored, never returned in GET
   environment: "sandbox" | "production";
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
 }
-
-// In a production app, this would be stored in a database
-// For now, we'll use APL metadata or a simple in-memory store
-const configsMap = new Map<string, VNPayConfig[]>();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -40,20 +40,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: "App not registered" });
     }
 
-    const configKey = saleorApiUrl;
+    // Create GraphQL client
+    const client = createClient(authData.saleorApiUrl, {
+      headers: {
+        Authorization: `Bearer ${authData.token}`,
+      },
+    });
 
     switch (req.method) {
       case "GET":
-        return handleGet(configKey, res);
+        return await handleGet(client, req, res);
       
       case "POST":
-        return handlePost(configKey, req, res);
+        return await handlePost(client, req, res);
       
       case "PUT":
-        return handlePut(configKey, req, res);
+        return await handlePut(client, req, res);
       
       case "DELETE":
-        return handleDelete(configKey, req, res);
+        return await handleDelete(client, req, res);
       
       default:
         return res.status(405).json({ error: "Method not allowed" });
@@ -67,10 +72,111 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-function handleGet(configKey: string, res: NextApiResponse) {
-  const configs = configsMap.get(configKey) || [];
+async function getConfigsFromMetadata(client: any): Promise<VNPayConfig[]> {
+  const query = `
+    query GetAppMetadata {
+      app {
+        id
+        privateMetadata {
+          key
+          value
+        }
+      }
+    }
+  `;
+
+  const result = await client.query(query, {}).toPromise();
   
-  // Return configs without hashSecret for security
+  if (result.error) {
+    throw new Error(`Failed to fetch metadata: ${result.error.message}`);
+  }
+
+  const metadataItem = result.data?.app?.privateMetadata?.find(
+    (item: any) => item.key === METADATA_KEY
+  );
+
+  if (!metadataItem) {
+    return [];
+  }
+
+  try {
+    return JSON.parse(metadataItem.value);
+  } catch (e) {
+    console.error("Failed to parse configs metadata:", e);
+    return [];
+  }
+}
+
+async function saveConfigsToMetadata(client: any, configs: VNPayConfig[]): Promise<void> {
+  const mutation = `
+    mutation UpdatePrivateMetadata($id: ID!, $input: [MetadataInput!]!) {
+      updatePrivateMetadata(id: $id, input: $input) {
+        item {
+          ... on App {
+            id
+            privateMetadata {
+              key
+              value
+            }
+          }
+        }
+        errors {
+          field
+          message
+        }
+      }
+    }
+  `;
+
+  // Get app ID first
+  const appQuery = `
+    query GetApp {
+      app {
+        id
+      }
+    }
+  `;
+
+  const appResult = await client.query(appQuery, {}).toPromise();
+  const appId = appResult.data?.app?.id;
+
+  if (!appId) {
+    throw new Error("Failed to get app ID");
+  }
+
+  const result = await client.mutation(mutation, {
+    id: appId,
+    input: [
+      {
+        key: METADATA_KEY,
+        value: JSON.stringify(configs),
+      },
+    ],
+  }).toPromise();
+
+  if (result.error || result.data?.updatePrivateMetadata?.errors?.length) {
+    throw new Error("Failed to save configs to metadata");
+  }
+}
+
+async function handleGet(client: any, req: NextApiRequest, res: NextApiResponse) {
+  const configs = await getConfigsFromMetadata(client);
+  const { id } = req.query;
+  
+  // If requesting single config by ID (for editing)
+  if (id && typeof id === 'string') {
+    const config = configs.find(c => c.id === id);
+    if (!config) {
+      return res.status(404).json({ error: "Config not found" });
+    }
+    // Return config WITH hashSecret for editing
+    return res.status(200).json({
+      success: true,
+      config,
+    });
+  }
+  
+  // Return all configs WITHOUT hashSecret for security
   const safeConfigs = configs.map(({ hashSecret, ...rest }) => rest);
   
   return res.status(200).json({
@@ -79,14 +185,14 @@ function handleGet(configKey: string, res: NextApiResponse) {
   });
 }
 
-function handlePost(configKey: string, req: NextApiRequest, res: NextApiResponse) {
+async function handlePost(client: any, req: NextApiRequest, res: NextApiResponse) {
   const { name, tmnCode, hashSecret, environment } = req.body;
   
   if (!name || !tmnCode || !hashSecret || !environment) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const configs = configsMap.get(configKey) || [];
+  const configs = await getConfigsFromMetadata(client);
   
   const newConfig: VNPayConfig = {
     id: `config_${Date.now()}_${Math.random().toString(36).substring(7)}`,
@@ -99,89 +205,70 @@ function handlePost(configKey: string, req: NextApiRequest, res: NextApiResponse
   };
 
   configs.push(newConfig);
-  configsMap.set(configKey, configs);
+  await saveConfigsToMetadata(client, configs);
 
-  // Return config without hashSecret
+  // Return without hashSecret
   const { hashSecret: _, ...safeConfig } = newConfig;
-
+  
   return res.status(201).json({
     success: true,
     config: safeConfig,
   });
 }
 
-function handlePut(configKey: string, req: NextApiRequest, res: NextApiResponse) {
+async function handlePut(client: any, req: NextApiRequest, res: NextApiResponse) {
   const { id, name, tmnCode, hashSecret, environment, isActive } = req.body;
   
   if (!id) {
     return res.status(400).json({ error: "Missing config ID" });
   }
 
-  const configs = configsMap.get(configKey) || [];
-  const index = configs.findIndex((c) => c.id === id);
+  const configs = await getConfigsFromMetadata(client);
+  const configIndex = configs.findIndex(c => c.id === id);
   
-  if (index === -1) {
-    return res.status(404).json({ error: "Configuration not found" });
+  if (configIndex === -1) {
+    return res.status(404).json({ error: "Config not found" });
   }
 
-  const existingConfig = configs[index];
   const updatedConfig: VNPayConfig = {
-    ...existingConfig,
-    name: name ?? existingConfig.name,
-    tmnCode: tmnCode ?? existingConfig.tmnCode,
-    hashSecret: hashSecret ?? existingConfig.hashSecret,
-    environment: environment ?? existingConfig.environment,
-    isActive: isActive ?? existingConfig.isActive,
+    ...configs[configIndex],
+    ...(name && { name }),
+    ...(tmnCode && { tmnCode }),
+    ...(hashSecret && { hashSecret }),
+    ...(environment && { environment }),
+    ...(typeof isActive === 'boolean' && { isActive }),
     updatedAt: new Date().toISOString(),
   };
 
-  configs[index] = updatedConfig;
-  configsMap.set(configKey, configs);
+  configs[configIndex] = updatedConfig;
+  await saveConfigsToMetadata(client, configs);
 
-  // Return config without hashSecret
   const { hashSecret: _, ...safeConfig } = updatedConfig;
-
+  
   return res.status(200).json({
     success: true,
     config: safeConfig,
   });
 }
 
-function handleDelete(configKey: string, req: NextApiRequest, res: NextApiResponse) {
+async function handleDelete(client: any, req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
   
-  if (!id || typeof id !== "string") {
+  if (!id || typeof id !== 'string') {
     return res.status(400).json({ error: "Missing config ID" });
   }
 
-  const configs = configsMap.get(configKey) || [];
-  const filtered = configs.filter((c) => c.id !== id);
+  const configs = await getConfigsFromMetadata(client);
+  const filteredConfigs = configs.filter(c => c.id !== id);
   
-  if (filtered.length === configs.length) {
-    return res.status(404).json({ error: "Configuration not found" });
+  if (filteredConfigs.length === configs.length) {
+    return res.status(404).json({ error: "Config not found" });
   }
 
-  configsMap.set(configKey, filtered);
-
+  await saveConfigsToMetadata(client, filteredConfigs);
+  
   return res.status(200).json({
     success: true,
-    message: "Configuration deleted",
+    message: "Config deleted",
   });
-}
-
-// Helper function to get configuration by ID (for use in payment webhooks)
-export function getVNPayConfigById(saleorApiUrl: string, configId: string): VNPayConfig | null {
-  const configs = configsMap.get(saleorApiUrl) || [];
-  return configs.find((c) => c.id === configId) || null;
-}
-
-// Helper function to get configuration for channel (for use in payment webhooks)
-export function getVNPayConfigForChannel(
-  saleorApiUrl: string, 
-  channelId: string,
-  channelMappings: Map<string, string>
-): VNPayConfig | null {
-  const configId = channelMappings.get(channelId);
-  if (!configId) return null;
-  return getVNPayConfigById(saleorApiUrl, configId);
 }

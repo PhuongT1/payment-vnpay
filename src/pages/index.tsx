@@ -41,45 +41,55 @@ const IndexPage = () => {
     typeof window !== "undefined" && window.location.href.includes("localhost");
 
   const loadConfigs = useCallback(async () => {
-    const saved = localStorage.getItem("vnpay_configs");
-    let loadedConfigs: VNPayConfig[] = saved ? JSON.parse(saved) : [];
+    try {
+      const saleorApiUrl = appBridgeState?.saleorApiUrl;
+      
+      // Check standalone mode
+      const isStandalone =
+        typeof window !== "undefined" &&
+        window.location.hostname === "localhost" &&
+        !appBridgeState?.ready;
 
-    // Check standalone mode inside the function to avoid dependency issues
-    const isStandalone =
-      typeof window !== "undefined" &&
-      window.location.hostname === "localhost" &&
-      !appBridgeState?.ready;
-
-    if (isStandalone && loadedConfigs.length === 0) {
-      const defaultConfig: VNPayConfig = {
-        id: `config_env_default`,
-        name: "Default Config (from .env)",
-        tmnCode: process.env.NEXT_PUBLIC_VNPAY_TMN_CODE || "9BPJ5NYM",
-        environment:
-          (process.env.NEXT_PUBLIC_VNPAY_ENVIRONMENT || "sandbox") as
-            | "sandbox"
-            | "production",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      };
-
-      loadedConfigs = [defaultConfig];
-      localStorage.setItem("vnpay_configs", JSON.stringify(loadedConfigs));
-
-      const credentials = {
-        [defaultConfig.id]: {
+      if (isStandalone && !saleorApiUrl) {
+        // Standalone mode - create default config from env
+        const defaultConfig: VNPayConfig = {
+          id: `config_env_default`,
+          name: "Default Config (from .env)",
           tmnCode: process.env.NEXT_PUBLIC_VNPAY_TMN_CODE || "9BPJ5NYM",
-          hashSecret:
-            process.env.NEXT_PUBLIC_VNPAY_HASH_SECRET || "8H7WMLT2J77PW2WJW78DI67ETKG5R6QG",
-          environment: process.env.NEXT_PUBLIC_VNPAY_ENVIRONMENT || "sandbox",
-        },
-      };
-      localStorage.setItem("vnpay_credentials", JSON.stringify(credentials));
-    }
+          environment:
+            (process.env.NEXT_PUBLIC_VNPAY_ENVIRONMENT || "sandbox") as
+              | "sandbox"
+              | "production",
+          isActive: true,
+          createdAt: new Date().toISOString(),
+        };
+        setConfigs([defaultConfig]);
+        return;
+      }
 
-    setConfigs(loadedConfigs);
-  }, []); // Empty dependency array - only recreate if needed
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      if (!saleorApiUrl) {
+        console.warn("No Saleor API URL available");
+        return;
+      }
+
+      // Fetch configs from Saleor Metadata API
+      const response = await fetch("/api/configs", {
+        headers: {
+          "saleor-api-url": saleorApiUrl,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch configs");
+      }
+
+      const data = await response.json();
+      setConfigs(data.configs || []);
+    } catch (error) {
+      console.error("Error loading configs:", error);
+      setConfigs([]);
+    }
+  }, [appBridgeState?.saleorApiUrl, appBridgeState?.ready]);
 
   const loadChannels = useCallback(async () => {
     try {
@@ -128,58 +138,139 @@ const IndexPage = () => {
     }
   }, [appBridgeState?.saleorApiUrl]);
 
+  const loadMappings = useCallback(async () => {
+    try {
+      const saleorApiUrl = appBridgeState?.saleorApiUrl;
+      if (!saleorApiUrl) {
+        console.warn("No Saleor API URL available for mappings");
+        return;
+      }
+
+      const response = await fetch("/api/mappings", {
+        headers: {
+          "saleor-api-url": saleorApiUrl,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch mappings");
+      }
+
+      const data = await response.json();
+      const mappings = data.mappings || [];
+
+      // Merge mappings into channels
+      setChannels((currentChannels) =>
+        currentChannels.map((ch) => {
+          const mapping = mappings.find((m: any) => m.channelId === ch.id);
+          return {
+            ...ch,
+            configId: mapping?.configId || undefined,
+          };
+        })
+      );
+    } catch (error) {
+      console.error("Error loading mappings:", error);
+    }
+  }, [appBridgeState?.saleorApiUrl]);
+
   // Only run once on mount to prevent infinite re-renders
   useEffect(() => {
     loadConfigs();
     loadChannels();
+    loadMappings();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleAddConfig = () => {
-    const config: VNPayConfig = {
-      id: editingId || `config_${Date.now()}`,
-      name: newConfig.name,
-      tmnCode: newConfig.tmnCode,
-      environment: newConfig.environment,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
+  const handleAddConfig = async () => {
+    try {
+      const saleorApiUrl = appBridgeState?.saleorApiUrl;
+      if (!saleorApiUrl) {
+        console.error("No Saleor API URL available");
+        return;
+      }
 
-    let updated: VNPayConfig[];
+      const config: VNPayConfig = {
+        id: editingId || `config_${Date.now()}`,
+        name: newConfig.name,
+        tmnCode: newConfig.tmnCode,
+        environment: newConfig.environment,
+        isActive: true,
+        createdAt: editingId 
+          ? configs.find(c => c.id === editingId)?.createdAt || new Date().toISOString()
+          : new Date().toISOString(),
+      };
 
-    if (editingId) {
-      updated = configs.map((c) => (c.id === editingId ? config : c));
-    } else {
-      updated = [...configs, config];
+      // Save to Saleor Metadata API
+      const response = await fetch("/api/configs", {
+        method: "POST",
+        headers: {
+          "saleor-api-url": saleorApiUrl,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...config,
+          hashSecret: newConfig.hashSecret, // Include hashSecret for saving
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save config");
+      }
+
+      // Reload configs from server
+      await loadConfigs();
+
+      setShowAddForm(false);
+      setEditingId(null);
+      setNewConfig({ name: "", tmnCode: "", hashSecret: "", environment: "sandbox" });
+    } catch (error) {
+      console.error("Error saving config:", error);
+      alert("Failed to save configuration. Please try again.");
     }
-
-    setConfigs(updated);
-    localStorage.setItem("vnpay_configs", JSON.stringify(updated));
-
-    const credentials = JSON.parse(localStorage.getItem("vnpay_credentials") || "{}");
-    credentials[config.id] = {
-      tmnCode: newConfig.tmnCode,
-      hashSecret: newConfig.hashSecret,
-      environment: newConfig.environment,
-    };
-    localStorage.setItem("vnpay_credentials", JSON.stringify(credentials));
-
-    setShowAddForm(false);
-    setEditingId(null);
-    setNewConfig({ name: "", tmnCode: "", hashSecret: "", environment: "sandbox" });
   };
 
-  const handleEditConfig = (config: VNPayConfig) => {
-    const credentials = JSON.parse(localStorage.getItem("vnpay_credentials") || "{}");
-    const configCreds = credentials[config.id] || {};
+  const handleEditConfig = async (config: VNPayConfig) => {
+    try {
+      const saleorApiUrl = appBridgeState?.saleorApiUrl;
+      if (!saleorApiUrl) {
+        console.error("No Saleor API URL available");
+        return;
+      }
 
-    setEditingId(config.id);
-    setNewConfig({
-      name: config.name,
-      tmnCode: config.tmnCode,
-      hashSecret: configCreds.hashSecret || "",
-      environment: config.environment,
-    });
-    setShowAddForm(true);
+      // Fetch full config with hashSecret
+      const response = await fetch(`/api/configs?id=${config.id}`, {
+        headers: {
+          "saleor-api-url": saleorApiUrl,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch config details");
+      }
+
+      const data = await response.json();
+      const fullConfig = data.config || config;
+
+      setEditingId(config.id);
+      setNewConfig({
+        name: config.name,
+        tmnCode: config.tmnCode,
+        hashSecret: fullConfig.hashSecret || "",
+        environment: config.environment,
+      });
+      setShowAddForm(true);
+    } catch (error) {
+      console.error("Error loading config for edit:", error);
+      // Fallback - edit without hashSecret
+      setEditingId(config.id);
+      setNewConfig({
+        name: config.name,
+        tmnCode: config.tmnCode,
+        hashSecret: "",
+        environment: config.environment,
+      });
+      setShowAddForm(true);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -188,22 +279,67 @@ const IndexPage = () => {
     setNewConfig({ name: "", tmnCode: "", hashSecret: "", environment: "sandbox" });
   };
 
-  const handleDeleteConfig = (id: string) => {
-    const updated = configs.filter((c) => c.id !== id);
-    setConfigs(updated);
-    localStorage.setItem("vnpay_configs", JSON.stringify(updated));
+  const handleDeleteConfig = async (id: string) => {
+    try {
+      const saleorApiUrl = appBridgeState?.saleorApiUrl;
+      if (!saleorApiUrl) {
+        console.error("No Saleor API URL available");
+        return;
+      }
 
-    const credentials = JSON.parse(localStorage.getItem("vnpay_credentials") || "{}");
-    delete credentials[id];
-    localStorage.setItem("vnpay_credentials", JSON.stringify(credentials));
+      const response = await fetch(`/api/configs?id=${id}`, {
+        method: "DELETE",
+        headers: {
+          "saleor-api-url": saleorApiUrl,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete config");
+      }
+
+      // Reload configs from server
+      await loadConfigs();
+    } catch (error) {
+      console.error("Error deleting config:", error);
+      alert("Failed to delete configuration. Please try again.");
+    }
   };
 
-  const handleAssignChannel = (channelId: string, configId: string) => {
-    const updated = channels.map((ch) =>
-      ch.id === channelId ? { ...ch, configId: configId || undefined } : ch
-    );
-    setChannels(updated);
-    localStorage.setItem("vnpay_channel_mappings", JSON.stringify(updated));
+  const handleAssignChannel = async (channelId: string, configId: string) => {
+    try {
+      const saleorApiUrl = appBridgeState?.saleorApiUrl;
+      if (!saleorApiUrl) {
+        console.error("No Saleor API URL available");
+        return;
+      }
+
+      // Auto-save channel mapping to Saleor Metadata API
+      const response = await fetch("/api/mappings", {
+        method: "POST",
+        headers: {
+          "saleor-api-url": saleorApiUrl,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          channelId,
+          configId: configId || null, // null to remove mapping
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save channel mapping");
+      }
+
+      // Update local state immediately for better UX
+      const updated = channels.map((ch) =>
+        ch.id === channelId ? { ...ch, configId: configId || undefined } : ch
+      );
+      setChannels(updated);
+    } catch (error) {
+      console.error("Error saving channel mapping:", error);
+      alert("Failed to save channel mapping. Please try again.");
+    }
   };
 
   return (
