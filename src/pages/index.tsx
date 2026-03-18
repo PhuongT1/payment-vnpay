@@ -82,11 +82,51 @@ const IndexPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const loadChannels = useCallback(async () => {
-    setChannels([
-      { id: "1", name: "Default Channel", slug: "default-channel" },
-      { id: "2", name: "Channel-PLN", slug: "channel-pln" },
-    ]);
-  }, []);
+    try {
+      // Fetch real channels from Saleor API
+      const saleorApiUrl = appBridgeState?.saleorApiUrl;
+      if (!saleorApiUrl) {
+        console.warn("No Saleor API URL available, using mock channels");
+        setChannels([
+          { id: "1", name: "Default Channel", slug: "default-channel" },
+          { id: "2", name: "Channel-PLN", slug: "channel-pln" },
+        ]);
+        return;
+      }
+
+      const response = await fetch("/api/channels", {
+        headers: {
+          "saleor-api-url": saleorApiUrl,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch channels");
+      }
+
+      const data = await response.json();
+      
+      if (data.channels && Array.isArray(data.channels)) {
+        const formattedChannels = data.channels.map((ch: any) => ({
+          id: ch.id,
+          name: ch.name,
+          slug: ch.slug,
+        }));
+        setChannels(formattedChannels);
+      } else {
+        // Fallback to mock if API returns invalid data
+        setChannels([
+          { id: "1", name: "Default Channel", slug: "default-channel" },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error loading channels:", error);
+      // Fallback to mock channels on error
+      setChannels([
+        { id: "1", name: "Default Channel", slug: "default-channel" },
+      ]);
+    }
+  }, [appBridgeState?.saleorApiUrl]);
 
   // Only run once on mount to prevent infinite re-renders
   useEffect(() => {
