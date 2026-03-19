@@ -68,6 +68,12 @@ export default transactionInitializeSessionWebhook.createHandler(
       const configMetadata = metadata.find((m: any) => m.key === METADATA_KEY);
       const mappingMetadata = metadata.find((m: any) => m.key === MAPPING_KEY);
 
+      console.log("📦 Metadata found:", {
+        hasConfigMetadata: !!configMetadata,
+        hasMappingMetadata: !!mappingMetadata,
+        configValue: configMetadata?.value ? "exists" : "missing",
+      });
+
       if (!configMetadata?.value) {
         console.error("No VNPay configuration found in metadata");
         return res.status(400).json({
@@ -80,18 +86,36 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       // Parse configs
       const allConfigs = JSON.parse(configMetadata.value);
+      console.log("📝 All configs loaded:", {
+        count: allConfigs.length,
+        configs: allConfigs.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          isActive: c.isActive,
+        })),
+      });
       
       // Get channel mapping to find correct config
       let configId: string | null = null;
       if (mappingMetadata?.value) {
         const mappings = JSON.parse(mappingMetadata.value);
         configId = mappings[sourceObject.channel.id];
+        console.log("🗺️ Channel mapping:", {
+          channelId: sourceObject.channel.id,
+          mappedConfigId: configId,
+        });
       }
 
       // Find config by mapping or use first active config
       const config = configId 
         ? allConfigs.find((c: any) => c.id === configId && c.isActive)
         : allConfigs.find((c: any) => c.isActive);
+
+      console.log("✅ Selected config:", config ? {
+        id: config.id,
+        name: config.name,
+        isActive: config.isActive,
+      } : "NOT FOUND");
 
       if (!config) {
         console.error("No active VNPay configuration found");
