@@ -82,14 +82,14 @@ export default transactionInitializeSessionWebhook.createHandler(
       const allConfigs = JSON.parse(configMetadata.value);
       
       // Get channel mapping to find correct config
-      let configId = null;
+      let configId: string | null = null;
       if (mappingMetadata?.value) {
         const mappings = JSON.parse(mappingMetadata.value);
         configId = mappings[sourceObject.channel.id];
       }
 
       // Find config by mapping or use first active config
-      let config = configId 
+      const config = configId 
         ? allConfigs.find((c: any) => c.id === configId && c.isActive)
         : allConfigs.find((c: any) => c.isActive);
 
