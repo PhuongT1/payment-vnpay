@@ -118,13 +118,32 @@ export default transactionInitializeSessionWebhook.createHandler(
       } : "NOT FOUND");
 
       if (!config) {
-        console.error("No active VNPay configuration found");
-        return res.status(400).json({
-          error: {
-            code: "CONFIGURATION_NOT_FOUND",
-            message: "No active VNPay configuration found. Please activate a configuration in the app settings.",
-          },
-        });
+        // Fallback to environment variables for development
+        console.log("⚙️ No config in metadata, checking environment variables...");
+        
+        const envTmnCode = process.env.VNPAY_TMN_CODE;
+        const envHashSecret = process.env.VNPAY_HASH_SECRET;
+        const envEnvironment = process.env.VNPAY_ENVIRONMENT || "sandbox";
+        
+        if (envTmnCode && envHashSecret) {
+          console.log("✅ Using config from environment variables");
+          config = {
+            id: "env_default",
+            name: "Environment Config",
+            tmnCode: envTmnCode,
+            hashSecret: envHashSecret,
+            environment: envEnvironment as "sandbox" | "production",
+            isActive: true,
+          };
+        } else {
+          console.error("❌ No active VNPay configuration found in metadata or environment");
+          return res.status(400).json({
+            error: {
+              code: "CONFIGURATION_NOT_FOUND",
+              message: "No active VNPay configuration found. Please activate a configuration in the app settings.",
+            },
+          });
+        }
       }
 
       console.log(`Using configuration: ${config.name}`);
