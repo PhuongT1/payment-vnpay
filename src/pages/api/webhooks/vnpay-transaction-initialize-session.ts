@@ -7,7 +7,6 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { saleorApp } from "@/saleor-app";
 import { createClient } from "@/lib/create-graphql-client";
-import { VNPayConfigManager } from "@/modules/payment-app-configuration/config-manager";
 import { VNPayProviderClient } from "@/modules/payment-provider/vnpay-provider";
 import {
   TransactionInitializeSessionDocument,
@@ -44,21 +43,33 @@ export default transactionInitializeSessionWebhook.createHandler(
         },
       });
 
-      // Get configuration manager
-      const configManager = new VNPayConfigManager(client, authData.appId);
+      // Get configuration from metadata (same key as UI uses)
+      const METADATA_KEY = "vnpay:configs";
+      const MAPPING_KEY = "vnpay:channel_mappings";
+      
+      // Fetch configs from metadata
+      const GET_METADATA = `
+        query GetAppMetadata($id: ID!) {
+          app(id: $id) {
+            id
+            privateMetadata {
+              key
+              value
+            }
+          }
+        }
+      `;
 
-      // Try to get configuration for the channel
-      let config = await configManager.getConfigurationByChannelId(
-        sourceObject.channel.id
-      );
+      const { data: metadataData } = await client
+        .query(GET_METADATA, { id: authData.appId })
+        .toPromise();
 
-      // Fallback to first available configuration
-      if (!config) {
-        config = await configManager.getDefaultConfiguration();
-      }
+      const metadata = metadataData?.app?.privateMetadata || [];
+      const configMetadata = metadata.find((m: any) => m.key === METADATA_KEY);
+      const mappingMetadata = metadata.find((m: any) => m.key === MAPPING_KEY);
 
-      if (!config) {
-        console.error("No VNPay configuration found");
+      if (!configMetadata?.value) {
+        console.error("No VNPay configuration found in metadata");
         return res.status(400).json({
           error: {
             code: "CONFIGURATION_NOT_FOUND",
@@ -67,10 +78,47 @@ export default transactionInitializeSessionWebhook.createHandler(
         });
       }
 
-      console.log(`Using configuration: ${config.configurationName}`);
+      // Parse configs
+      const allConfigs = JSON.parse(configMetadata.value);
+      
+      // Get channel mapping to find correct config
+      let configId = null;
+      if (mappingMetadata?.value) {
+        const mappings = JSON.parse(mappingMetadata.value);
+        configId = mappings[sourceObject.channel.id];
+      }
+
+      // Find config by mapping or use first active config
+      let config = configId 
+        ? allConfigs.find((c: any) => c.id === configId && c.isActive)
+        : allConfigs.find((c: any) => c.isActive);
+
+      if (!config) {
+        console.error("No active VNPay configuration found");
+        return res.status(400).json({
+          error: {
+            code: "CONFIGURATION_NOT_FOUND",
+            message: "No active VNPay configuration found. Please activate a configuration in the app settings.",
+          },
+        });
+      }
+
+      console.log(`Using configuration: ${config.name}`);
+
+      // Map UI config format to VNPayProviderClient format
+      const providerConfig = {
+        configurationId: config.id,
+        configurationName: config.name,
+        partnerCode: config.tmnCode,
+        secretKey: config.hashSecret,
+        environment: config.environment,
+        channelId: sourceObject.channel.id,
+        redirectUrl: process.env.VNPAY_REDIRECT_URL || `${authData.saleorApiUrl.replace('/graphql/', '')}/api/vnpay/return`,
+        ipnUrl: process.env.VNPAY_IPN_URL || `${authData.saleorApiUrl.replace('/graphql/', '')}/api/vnpay/ipn`,
+      };
 
       // Initialize payment provider
-      const providerClient = new VNPayProviderClient(config);
+      const providerClient = new VNPayProviderClient(providerConfig as any);
 
       // Get payment details
       const amount = action.amount;
