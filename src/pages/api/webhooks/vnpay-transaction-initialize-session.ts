@@ -107,7 +107,7 @@ export default transactionInitializeSessionWebhook.createHandler(
       }
 
       // Find config by mapping or use first active config
-      const config = configId 
+      let config = configId 
         ? allConfigs.find((c: any) => c.id === configId && c.isActive)
         : allConfigs.find((c: any) => c.isActive);
 
