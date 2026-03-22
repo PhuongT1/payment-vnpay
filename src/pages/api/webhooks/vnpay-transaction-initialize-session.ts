@@ -39,6 +39,13 @@ export default transactionInitializeSessionWebhook.createHandler(
 
     console.log("Transaction Initialize Session webhook triggered");
 
+    const logCheckoutId = (payload.sourceObject as any)?.id ?? "unknown";
+    const logChannelId = payload.sourceObject?.channel?.id ?? "unknown";
+    const logAmount = payload.action?.amount;
+    const logCurrency = payload.action?.currency;
+
+    console.log(`📥 [Payment Init] checkoutId=${logCheckoutId} channel=${logChannelId} amount=${logAmount} ${logCurrency}`);
+
     try {
       // Create GraphQL client
       const client = createClient(authData.saleorApiUrl, {
@@ -79,7 +86,7 @@ export default transactionInitializeSessionWebhook.createHandler(
       });
 
       if (!configMetadata?.value) {
-        console.error("No VNPay configuration found in metadata");
+        console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — No VNPay configuration found in metadata`);
         return res.status(400).json({
           error: {
             code: "CONFIGURATION_NOT_FOUND",
@@ -140,7 +147,7 @@ export default transactionInitializeSessionWebhook.createHandler(
             isActive: true,
           };
         } else {
-          console.error("❌ No active VNPay configuration found in metadata or environment");
+          console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — No active VNPay config in metadata or env`);
           return res.status(400).json({
             error: {
               code: "CONFIGURATION_NOT_FOUND",
@@ -268,7 +275,7 @@ export default transactionInitializeSessionWebhook.createHandler(
       });
 
       if (!paymentResult.success) {
-        console.error("Payment creation failed:", paymentResult.errorMessage);
+        console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} amount=${amountInVND}VND — Payment creation failed: ${paymentResult.errorMessage}`);
         return res.status(400).json({
           error: {
             code: "PAYMENT_CREATION_FAILED",
@@ -277,11 +284,7 @@ export default transactionInitializeSessionWebhook.createHandler(
         });
       }
 
-      console.log("✅ Payment created successfully:", {
-        transactionRef: paymentResult.transactionRef,
-        originalAmount: `${originalAmount} ${originalCurrency}`,
-        vnpayAmount: `${amountInVND} VND`,
-      });
+      console.log(`✅ [Payment Init] checkoutId=${logCheckoutId} — txRef=${paymentResult.transactionRef} original=${logAmount}${logCurrency} vnpay=${amountInVND}VND`);
 
       // Return success response with payment URL
       // NOTE: Return original amount to Saleor (it tracks in original currency)
