@@ -159,21 +159,36 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       console.log(`Using configuration: ${config.name}`);
 
-      // Build smart return URL that points to STOREFRONT
-      // This ensures VNPay redirects back to where the popup was opened
+      // Build return URL: priority = config.returnUrl > auto-detect from headers
       const checkoutId = sourceObject.__typename === 'Checkout' ? sourceObject.id : undefined;
-      const storefrontReturnUrl = buildVNPayReturnUrl(req, checkoutId);
-      
+      let storefrontReturnUrl: string;
+
+      if (config.returnUrl && config.returnUrl.trim() !== '') {
+        // Use URL from config (set by user in dashboard UI)
+        storefrontReturnUrl = config.returnUrl.trim();
+        console.log('🔧 Using returnUrl from config:', storefrontReturnUrl);
+      } else {
+        // Fallback: auto-detect from request headers
+        storefrontReturnUrl = buildVNPayReturnUrl(req, checkoutId);
+        console.log('🔍 Auto-detected returnUrl from request:', storefrontReturnUrl);
+      }
+
       // Validate URL to prevent common mistake
       if (!validateStorefrontUrl(storefrontReturnUrl)) {
         console.error('❌ Invalid storefront URL detected!');
         return res.status(500).json({
           error: {
             code: 'INVALID_STOREFRONT_URL',
-            message: 'Storefront URL configuration error. Set NEXT_PUBLIC_STOREFRONT_URL in .env',
+            message: 'Storefront URL configuration error. Set returnUrl in VNPay config or NEXT_PUBLIC_STOREFRONT_URL in .env',
           },
         });
       }
+
+      // IPN URL: priority = config.ipnUrl > env variable
+      const ipnUrl = (config.ipnUrl && config.ipnUrl.trim() !== '') 
+        ? config.ipnUrl.trim() 
+        : VNPAY_IPN_WEBHOOK_URL;
+      console.log('📡 IPN URL:', ipnUrl);
 
       // Map UI config format to VNPayProviderClient format
       const providerConfig = {
@@ -183,16 +198,17 @@ export default transactionInitializeSessionWebhook.createHandler(
         secretKey: config.hashSecret,
         environment: config.environment,
         channelId: sourceObject.channel.id,
-        // CRITICAL: Return URL must point to STOREFRONT not payment app!
+        // Return URL from config or auto-detected
         redirectUrl: storefrontReturnUrl,
-        // IPN URL points to payment app (backend webhook)
-        ipnUrl: VNPAY_IPN_WEBHOOK_URL,
+        // IPN URL from config or env
+        ipnUrl: ipnUrl,
       };
       
       console.log('🔧 VNPay configuration:', {
         returnUrl: providerConfig.redirectUrl,
         ipnUrl: providerConfig.ipnUrl,
         environment: config.environment,
+        returnUrlSource: (config.returnUrl && config.returnUrl.trim() !== '') ? 'config' : 'auto-detect',
       });
 
       // Initialize payment provider
