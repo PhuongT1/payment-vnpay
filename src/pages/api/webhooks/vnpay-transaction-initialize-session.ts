@@ -302,14 +302,12 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       console.log(`✅ [Payment Init] checkoutId=${logCheckoutId} — txRef=${paymentResult.transactionRef} original=${logAmount}${logCurrency} vnpay=${amountInVND}VND`);
 
-      // Return success response with payment URL
-      // NOTE: Return original amount to Saleor (it tracks in original currency)
-      // But VNPay payment URL already has converted VND amount
+      // Return CHARGE_ACTION_REQUIRED so Saleor knows user must complete payment
+      // The storefront will open paymentUrl, user pays, then calls transactionProcess
       return res.status(200).json({
         pspReference: paymentResult.transactionRef,
         data: {
           paymentUrl: paymentResult.paymentUrl,
-          configurationId: config.configurationId,
           // Include conversion info for debugging
           currencyConversion: originalCurrency !== "VND" ? {
             originalAmount,
@@ -318,14 +316,8 @@ export default transactionInitializeSessionWebhook.createHandler(
             convertedCurrency: "VND",
           } : undefined,
         },
-        result: "AUTHORIZATION_ACTION_REQUIRED",
-        amount: action.amount, // Keep original amount for Saleor tracking
-        actions: [
-          {
-            actionType: "REDIRECT",
-            url: paymentResult.paymentUrl,
-          },
-        ],
+        result: "CHARGE_ACTION_REQUIRED",
+        amount: action.amount, // Original amount for Saleor tracking
       });
     } catch (error) {
       console.error("Transaction initialize error:", error);
