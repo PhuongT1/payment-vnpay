@@ -215,7 +215,7 @@ const IndexPage = () => {
 
       // Save to Saleor Metadata API
       const response = await fetch("/api/configs", {
-        method: "POST",
+        method: editingId ? "PUT" : "POST",
         headers: {
           "saleor-api-url": saleorApiUrl,
           "Content-Type": "application/json",
