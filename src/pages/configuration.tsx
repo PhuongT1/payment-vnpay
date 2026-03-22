@@ -10,6 +10,11 @@ interface VNPayConfig {
   id: string;
   name: string;
   tmnCode: string;
+  returnUrl: string;
+  ipnUrl: string;
+  vnpVersion: string;
+  vnpBankCode?: string;
+  vnpLocale: string;
   environment: "sandbox" | "production";
   isActive: boolean;
   createdAt: string;
@@ -30,6 +35,12 @@ export default function VNPayConfigPage() {
     name: "",
     tmnCode: "",
     hashSecret: "",
+    returnUrl: "",
+    ipnUrl: "",
+    vnpVersion: "2.1.0",
+    vnpCommand: "pay" as const,
+    vnpBankCode: "",
+    vnpLocale: "vn",
     environment: "sandbox" as "sandbox" | "production",
   });
 
@@ -62,6 +73,11 @@ export default function VNPayConfigPage() {
       id: `config_${Date.now()}`,
       name: newConfig.name,
       tmnCode: newConfig.tmnCode,
+      returnUrl: newConfig.returnUrl,
+      ipnUrl: newConfig.ipnUrl,
+      vnpVersion: newConfig.vnpVersion,
+      vnpBankCode: newConfig.vnpBankCode || undefined,
+      vnpLocale: newConfig.vnpLocale,
       environment: newConfig.environment,
       isActive: true,
       createdAt: new Date().toISOString(),
@@ -76,12 +92,28 @@ export default function VNPayConfigPage() {
     credentials[config.id] = {
       tmnCode: newConfig.tmnCode,
       hashSecret: newConfig.hashSecret,
+      returnUrl: newConfig.returnUrl,
+      ipnUrl: newConfig.ipnUrl,
+      vnpVersion: newConfig.vnpVersion,
+      vnpBankCode: newConfig.vnpBankCode || undefined,
+      vnpLocale: newConfig.vnpLocale,
       environment: newConfig.environment,
     };
     localStorage.setItem("vnpay_credentials", JSON.stringify(credentials));
 
     setShowAddForm(false);
-    setNewConfig({ name: "", tmnCode: "", hashSecret: "", environment: "sandbox" });
+    setNewConfig({
+      name: "",
+      tmnCode: "",
+      hashSecret: "",
+      returnUrl: "",
+      ipnUrl: "",
+      vnpVersion: "2.1.0",
+      vnpCommand: "pay",
+      vnpBankCode: "",
+      vnpLocale: "vn",
+      environment: "sandbox",
+    });
   };
 
   const handleDeleteConfig = (id: string) => {
@@ -218,6 +250,134 @@ export default function VNPayConfigPage() {
 
               <div style={{ marginBottom: "1rem" }}>
                 <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                  Return URL (vnp_ReturnUrl) <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <input
+                  type="url"
+                  value={newConfig.returnUrl}
+                  onChange={(e) => setNewConfig({ ...newConfig, returnUrl: e.target.value })}
+                  placeholder="https://yourdomain.com/vnpay-return"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "1rem",
+                  }}
+                />
+                <p style={{ margin: "4px 0 0 0", fontSize: "0.8rem", color: "#6b7280" }}>
+                  URL VNPay redirect sau khi thanh toán
+                </p>
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                  IPN URL (Webhook) <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <input
+                  type="url"
+                  value={newConfig.ipnUrl}
+                  onChange={(e) => setNewConfig({ ...newConfig, ipnUrl: e.target.value })}
+                  placeholder="https://yourdomain.com/api/vnpay/ipn"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "1rem",
+                  }}
+                />
+                <p style={{ margin: "4px 0 0 0", fontSize: "0.8rem", color: "#6b7280" }}>
+                  URL server-to-server callback để xác nhận giao dịch
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                    Phiên bản API (vnp_Version)
+                  </label>
+                  <input
+                    type="text"
+                    value={newConfig.vnpVersion}
+                    onChange={(e) => setNewConfig({ ...newConfig, vnpVersion: e.target.value })}
+                    placeholder="2.1.0"
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "1rem",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                    Lệnh giao dịch (vnp_Command)
+                  </label>
+                  <input
+                    type="text"
+                    value="pay"
+                    readOnly
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "1rem",
+                      background: "#f3f4f6",
+                      color: "#9ca3af",
+                      cursor: "not-allowed",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                    Phương thức thanh toán (vnp_BankCode)
+                  </label>
+                  <select
+                    value={newConfig.vnpBankCode}
+                    onChange={(e) => setNewConfig({ ...newConfig, vnpBankCode: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    <option value="">Khách tự chọn tại VNPay</option>
+                    <option value="VNPAYQR">VNPAYQR - QR Code</option>
+                    <option value="VNBANK">VNBANK - Thẻ ATM nội địa</option>
+                    <option value="INTCARD">INTCARD - Thẻ quốc tế</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                    Ngôn ngữ (vnp_Locale)
+                  </label>
+                  <select
+                    value={newConfig.vnpLocale}
+                    onChange={(e) => setNewConfig({ ...newConfig, vnpLocale: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    <option value="vn">Tiếng Việt (vn)</option>
+                    <option value="en">English (en)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
                   Environment
                 </label>
                 <select
@@ -239,14 +399,14 @@ export default function VNPayConfigPage() {
               <div style={{ display: "flex", gap: "0.75rem" }}>
                 <button
                   onClick={handleAddConfig}
-                  disabled={!newConfig.name || !newConfig.tmnCode || !newConfig.hashSecret}
+                  disabled={!newConfig.name || !newConfig.tmnCode || !newConfig.hashSecret || !newConfig.returnUrl || !newConfig.ipnUrl}
                   style={{
                     padding: "0.75rem 1.5rem",
-                    background: newConfig.name && newConfig.tmnCode && newConfig.hashSecret ? "#10b981" : "#9ca3af",
+                    background: newConfig.name && newConfig.tmnCode && newConfig.hashSecret && newConfig.returnUrl && newConfig.ipnUrl ? "#10b981" : "#9ca3af",
                     color: "#fff",
                     border: "none",
                     borderRadius: "6px",
-                    cursor: newConfig.name && newConfig.tmnCode && newConfig.hashSecret ? "pointer" : "not-allowed",
+                    cursor: newConfig.name && newConfig.tmnCode && newConfig.hashSecret && newConfig.returnUrl && newConfig.ipnUrl ? "pointer" : "not-allowed",
                     fontWeight: "500",
                   }}
                 >
@@ -300,6 +460,12 @@ export default function VNPayConfigPage() {
                       TMN Code
                     </th>
                     <th style={{ padding: "0.75rem 1rem", textAlign: "left", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
+                      Return URL
+                    </th>
+                    <th style={{ padding: "0.75rem 1rem", textAlign: "left", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
+                      Locale / BankCode
+                    </th>
+                    <th style={{ padding: "0.75rem 1rem", textAlign: "left", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
                       Environment
                     </th>
                     <th style={{ padding: "0.75rem 1rem", textAlign: "left", fontWeight: "600", color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
@@ -318,6 +484,21 @@ export default function VNPayConfigPage() {
                       </td>
                       <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb", color: "#6b7280", fontFamily: "monospace" }}>
                         {config.tmnCode}
+                      </td>
+                      <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb", color: "#6b7280", fontSize: "0.8rem", maxWidth: "200px" }}>
+                        <span title={config.returnUrl} style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {config.returnUrl || <span style={{ color: "#dc2626" }}>Chưa cấu hình</span>}
+                        </span>
+                      </td>
+                      <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>
+                        <span style={{ padding: "0.2rem 0.5rem", background: "#eff6ff", color: "#1d4ed8", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "600", marginRight: "4px" }}>
+                          {config.vnpLocale || "vn"}
+                        </span>
+                        {config.vnpBankCode && (
+                          <span style={{ padding: "0.2rem 0.5rem", background: "#f0fdf4", color: "#15803d", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "600" }}>
+                            {config.vnpBankCode}
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: "1rem", borderBottom: "1px solid #e5e7eb" }}>
                         <span style={{

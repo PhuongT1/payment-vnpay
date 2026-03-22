@@ -29,6 +29,12 @@ const IndexPage = () => {
     name: "",
     tmnCode: "",
     hashSecret: "",
+    returnUrl: "",
+    ipnUrl: "",
+    vnpVersion: "2.1.0",
+    vnpCommand: "pay" as const,
+    vnpBankCode: "" as "" | "VNPAYQR" | "VNBANK" | "INTCARD",
+    vnpLocale: "vn" as "vn" | "en",
     environment: "sandbox" as "sandbox" | "production",
   });
 
@@ -195,6 +201,11 @@ const IndexPage = () => {
         id: editingId || `config_${Date.now()}`,
         name: newConfig.name,
         tmnCode: newConfig.tmnCode,
+        returnUrl: newConfig.returnUrl,
+        ipnUrl: newConfig.ipnUrl,
+        vnpVersion: newConfig.vnpVersion,
+        vnpBankCode: newConfig.vnpBankCode || undefined,
+        vnpLocale: newConfig.vnpLocale,
         environment: newConfig.environment,
         isActive: true,
         createdAt: editingId 
@@ -211,7 +222,7 @@ const IndexPage = () => {
         },
         body: JSON.stringify({
           ...config,
-          hashSecret: newConfig.hashSecret, // Include hashSecret for saving
+          hashSecret: newConfig.hashSecret,
         }),
       });
 
@@ -224,7 +235,7 @@ const IndexPage = () => {
 
       setShowAddForm(false);
       setEditingId(null);
-      setNewConfig({ name: "", tmnCode: "", hashSecret: "", environment: "sandbox" });
+      setNewConfig({ name: "", tmnCode: "", hashSecret: "", returnUrl: "", ipnUrl: "", vnpVersion: "2.1.0", vnpCommand: "pay", vnpBankCode: "", vnpLocale: "vn", environment: "sandbox" });
     } catch (error) {
       console.error("Error saving config:", error);
       alert("Failed to save configuration. Please try again.");
@@ -258,6 +269,12 @@ const IndexPage = () => {
         name: config.name,
         tmnCode: config.tmnCode,
         hashSecret: fullConfig.hashSecret || "",
+        returnUrl: config.returnUrl || "",
+        ipnUrl: config.ipnUrl || "",
+        vnpVersion: config.vnpVersion || "2.1.0",
+        vnpCommand: "pay",
+        vnpBankCode: (config.vnpBankCode || "") as "" | "VNPAYQR" | "VNBANK" | "INTCARD",
+        vnpLocale: (config.vnpLocale || "vn") as "vn" | "en",
         environment: config.environment,
       });
       setShowAddForm(true);
@@ -269,6 +286,12 @@ const IndexPage = () => {
         name: config.name,
         tmnCode: config.tmnCode,
         hashSecret: "",
+        returnUrl: config.returnUrl || "",
+        ipnUrl: config.ipnUrl || "",
+        vnpVersion: config.vnpVersion || "2.1.0",
+        vnpCommand: "pay",
+        vnpBankCode: (config.vnpBankCode || "") as "" | "VNPAYQR" | "VNBANK" | "INTCARD",
+        vnpLocale: (config.vnpLocale || "vn") as "vn" | "en",
         environment: config.environment,
       });
       setShowAddForm(true);
@@ -278,7 +301,7 @@ const IndexPage = () => {
   const handleCancelEdit = () => {
     setShowAddForm(false);
     setEditingId(null);
-    setNewConfig({ name: "", tmnCode: "", hashSecret: "", environment: "sandbox" });
+    setNewConfig({ name: "", tmnCode: "", hashSecret: "", returnUrl: "", ipnUrl: "", vnpVersion: "2.1.0", vnpCommand: "pay", vnpBankCode: "", vnpLocale: "vn", environment: "sandbox" });
   };
 
   const handleDeleteConfig = async (id: string) => {

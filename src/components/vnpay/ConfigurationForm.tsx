@@ -9,6 +9,12 @@ interface ConfigFormData {
   name: string;
   tmnCode: string;
   hashSecret: string;
+  returnUrl: string;
+  ipnUrl: string;
+  vnpVersion: string;
+  vnpCommand: "pay";
+  vnpBankCode: "" | "VNPAYQR" | "VNBANK" | "INTCARD";
+  vnpLocale: "vn" | "en";
   environment: "sandbox" | "production";
 }
 
@@ -44,7 +50,7 @@ export const ConfigurationForm: React.FC<ConfigurationFormProps> = ({
   onSave,
   onCancel,
 }) => {
-  const isValid = formData.name && formData.tmnCode && formData.hashSecret;
+  const isValid = formData.name && formData.tmnCode && formData.hashSecret && formData.returnUrl && formData.ipnUrl;
 
   const buttonSaveStyle = {
     padding: "8px 16px",
@@ -118,6 +124,93 @@ export const ConfigurationForm: React.FC<ConfigurationFormProps> = ({
         />
       </div>
 
+      <div style={{ marginBottom: "16px" }}>
+        <label style={labelStyle}>
+          Return URL (vnp_ReturnUrl) <span style={{ color: "#dc2626" }}>*</span>
+        </label>
+        <input
+          type="url"
+          value={formData.returnUrl}
+          onChange={(e) => onFormChange({ ...formData, returnUrl: e.target.value })}
+          placeholder="https://yourdomain.com/vnpay-return"
+          style={inputStyle}
+        />
+        <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#6b7280" }}>
+          URL VNPay redirect sau khi thanh toán (vnp_ReturnUrl)
+        </p>
+      </div>
+
+      <div style={{ marginBottom: "16px" }}>
+        <label style={labelStyle}>
+          IPN URL (Webhook) <span style={{ color: "#dc2626" }}>*</span>
+        </label>
+        <input
+          type="url"
+          value={formData.ipnUrl}
+          onChange={(e) => onFormChange({ ...formData, ipnUrl: e.target.value })}
+          placeholder="https://yourdomain.com/api/vnpay/ipn"
+          style={inputStyle}
+        />
+        <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#6b7280" }}>
+          URL server-to-server callback để xác nhận giao dịch
+        </p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+        <div>
+          <label style={labelStyle}>Phiên bản API (vnp_Version)</label>
+          <input
+            type="text"
+            value={formData.vnpVersion}
+            onChange={(e) => onFormChange({ ...formData, vnpVersion: e.target.value })}
+            placeholder="2.1.0"
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>Lệnh giao dịch (vnp_Command)</label>
+          <input
+            type="text"
+            value="pay"
+            readOnly
+            style={{ ...inputStyle, background: "#f3f4f6", color: "#9ca3af", cursor: "not-allowed" }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+        <div>
+          <label style={labelStyle}>Phương thức thanh toán (vnp_BankCode)</label>
+          <select
+            value={formData.vnpBankCode}
+            onChange={(e) =>
+              onFormChange({
+                ...formData,
+                vnpBankCode: e.target.value as ConfigFormData["vnpBankCode"],
+              })
+            }
+            style={{ ...inputStyle, background: "#fff" }}
+          >
+            <option value="">Khách tự chọn tại VNPay</option>
+            <option value="VNPAYQR">VNPAYQR - QR Code</option>
+            <option value="VNBANK">VNBANK - Thẻ ATM nội địa</option>
+            <option value="INTCARD">INTCARD - Thẻ quốc tế</option>
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Ngôn ngữ (vnp_Locale)</label>
+          <select
+            value={formData.vnpLocale}
+            onChange={(e) =>
+              onFormChange({ ...formData, vnpLocale: e.target.value as "vn" | "en" })
+            }
+            style={{ ...inputStyle, background: "#fff" }}
+          >
+            <option value="vn">Tiếng Việt (vn)</option>
+            <option value="en">English (en)</option>
+          </select>
+        </div>
+      </div>
       <div style={{ marginBottom: "24px" }}>
         <label style={labelStyle}>Environment</label>
         <select

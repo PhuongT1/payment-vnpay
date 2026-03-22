@@ -9,6 +9,11 @@ export interface VNPayConfig {
   id: string;
   name: string;
   tmnCode: string;
+  returnUrl?: string;
+  ipnUrl?: string;
+  vnpVersion?: string;
+  vnpBankCode?: string;
+  vnpLocale?: string;
   environment: "sandbox" | "production";
   isActive: boolean;
   createdAt: string;

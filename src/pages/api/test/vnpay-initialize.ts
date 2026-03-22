@@ -15,7 +15,16 @@ export default async function handler(
   }
 
   try {
-    const { orderId, amount, orderInfo, bankCode } = req.body;
+    const {
+      orderId,
+      amount,
+      orderInfo,
+      bankCode,
+      locale,
+      vnpVersion,
+      vnpCommand,
+      vnpReturnUrl,
+    } = req.body;
 
     if (!orderId || !amount) {
       return res.status(400).json({
@@ -42,7 +51,10 @@ export default async function handler(
       orderInfo: orderInfo || `Payment for order ${orderId}`,
       ipAddr,
       bankCode: bankCode || undefined,
-      locale: "vn",
+      locale: locale || "vn",
+      version: vnpVersion || "2.1.0",
+      command: vnpCommand || "pay",
+      returnUrl: vnpReturnUrl,
     });
 
     return res.status(200).json({

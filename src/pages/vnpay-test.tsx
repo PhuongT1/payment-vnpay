@@ -7,7 +7,20 @@ export default function VNPayTestPage() {
     amount: 100000, // 100,000 VND
     orderInfo: "Test payment for VNPay integration",
     bankCode: "", // empty = user selects at VNPay
+    locale: "vn",
+    vnpVersion: "2.1.0",
+    vnpCommand: "pay",
+    vnpReturnUrl: "",
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !testData.vnpReturnUrl) {
+      setTestData((prev) => ({
+        ...prev,
+        vnpReturnUrl: `${window.location.origin}/vnpay-return`,
+      }));
+    }
+  }, [testData.vnpReturnUrl]);
 
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -272,6 +285,118 @@ export default function VNPayTestPage() {
                     fontSize: "1rem",
                   }}
                 />
+              </div>
+
+              <div style={{ marginBottom: "1.5rem" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontWeight: "600",
+                    color: "#555",
+                  }}
+                >
+                  vnp_ReturnUrl:
+                </label>
+                <input
+                  type="url"
+                  value={testData.vnpReturnUrl}
+                  onChange={(e) =>
+                    setTestData({ ...testData, vnpReturnUrl: e.target.value })
+                  }
+                  placeholder="https://your-store.com/vnpay-return"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "2px solid #e0e0e0",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "1.5rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      fontWeight: "600",
+                      color: "#555",
+                    }}
+                  >
+                    vnp_Version:
+                  </label>
+                  <input
+                    type="text"
+                    value={testData.vnpVersion}
+                    onChange={(e) =>
+                      setTestData({ ...testData, vnpVersion: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "2px solid #e0e0e0",
+                      borderRadius: "8px",
+                      fontSize: "1rem",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      fontWeight: "600",
+                      color: "#555",
+                    }}
+                  >
+                    vnp_Command:
+                  </label>
+                  <input
+                    type="text"
+                    value={testData.vnpCommand}
+                    readOnly
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "2px solid #e0e0e0",
+                      borderRadius: "8px",
+                      fontSize: "1rem",
+                      backgroundColor: "#f5f5f5",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "1.5rem" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontWeight: "600",
+                    color: "#555",
+                  }}
+                >
+                  vnp_Locale:
+                </label>
+                <select
+                  value={testData.locale}
+                  onChange={(e) =>
+                    setTestData({ ...testData, locale: e.target.value as "vn" | "en" })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "2px solid #e0e0e0",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                  }}
+                >
+                  <option value="vn">vn (Vietnamese)</option>
+                  <option value="en">en (English)</option>
+                </select>
               </div>
 
               <div style={{ marginBottom: "1.5rem" }}>

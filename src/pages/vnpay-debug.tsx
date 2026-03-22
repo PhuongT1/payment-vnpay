@@ -21,7 +21,20 @@ export default function VNPayDebugPage() {
     amount: 100000,
     orderInfo: "Test payment for VNPay integration",
     bankCode: "",
+    locale: "vn",
+    vnpVersion: "2.1.0",
+    vnpCommand: "pay",
+    vnpReturnUrl: "",
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !testData.vnpReturnUrl) {
+      setTestData((prev) => ({
+        ...prev,
+        vnpReturnUrl: `${window.location.origin}/vnpay-return`,
+      }));
+    }
+  }, [testData.vnpReturnUrl]);
 
   const [result, setResult] = useState<any>(null);
   const [showPaymentUrl, setShowPaymentUrl] = useState(false);
@@ -320,6 +333,91 @@ export default function VNPayDebugPage() {
                   <option value="NCB">NCB Bank</option>
                   <option value="VNPAYQR">VNPAY QR</option>
                   <option value="VNBANK">ATM Card / Bank</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem", color: "#cbd5e1" }}>
+                  vnp_ReturnUrl:
+                </label>
+                <input
+                  type="url"
+                  value={testData.vnpReturnUrl}
+                  onChange={(e) => setTestData({ ...testData, vnpReturnUrl: e.target.value })}
+                  placeholder="https://your-store.com/vnpay-return"
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#0f172a",
+                    border: "1px solid #475569",
+                    borderRadius: "4px",
+                    color: "#e2e8f0",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "1rem" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", color: "#cbd5e1" }}>
+                    vnp_Version:
+                  </label>
+                  <input
+                    type="text"
+                    value={testData.vnpVersion}
+                    onChange={(e) => setTestData({ ...testData, vnpVersion: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      background: "#0f172a",
+                      border: "1px solid #475569",
+                      borderRadius: "4px",
+                      color: "#e2e8f0",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "0.5rem", color: "#cbd5e1" }}>
+                    vnp_Command:
+                  </label>
+                  <input
+                    type="text"
+                    value={testData.vnpCommand}
+                    readOnly
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      background: "#111827",
+                      border: "1px solid #475569",
+                      borderRadius: "4px",
+                      color: "#9ca3af",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem", color: "#cbd5e1" }}>
+                  vnp_Locale:
+                </label>
+                <select
+                  value={testData.locale}
+                  onChange={(e) => setTestData({ ...testData, locale: e.target.value as "vn" | "en" })}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#0f172a",
+                    border: "1px solid #475569",
+                    borderRadius: "4px",
+                    color: "#e2e8f0",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <option value="vn">vn (Vietnamese)</option>
+                  <option value="en">en (English)</option>
                 </select>
               </div>
 

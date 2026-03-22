@@ -20,6 +20,12 @@ interface ConfigFormData {
   name: string;
   tmnCode: string;
   hashSecret: string;
+  returnUrl: string;
+  ipnUrl: string;
+  vnpVersion: string;
+  vnpCommand: "pay";
+  vnpBankCode: "" | "VNPAYQR" | "VNBANK" | "INTCARD";
+  vnpLocale: "vn" | "en";
   environment: "sandbox" | "production";
 }
 

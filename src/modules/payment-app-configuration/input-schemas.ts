@@ -13,6 +13,10 @@ export const VNPayConfigEntrySchema = z.object({
   secretKey: z.string().min(1, "Secret key is required"), // vnp_HashSecret
   redirectUrl: z.string().url("Must be a valid URL"), // Return URL after payment
   ipnUrl: z.string().url("Must be a valid URL"), // IPN (webhook) URL
+  vnpVersion: z.string().min(1).max(8).default("2.1.0"),
+  vnpCommand: z.literal("pay").default("pay"),
+  vnpBankCode: z.enum(["VNPAYQR", "VNBANK", "INTCARD"]).optional(),
+  vnpLocale: z.enum(["vn", "en"]).default("vn"),
   environment: z.enum(["sandbox", "production"]),
   // Optional: Channel assignment
   channelId: z.string().optional(),

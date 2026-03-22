@@ -5,6 +5,7 @@
 
 import crypto from "crypto";
 import querystring from "querystring";
+import { VNPAY_PAYMENT_GATEWAY_URL, VNPAY_API_QUERY_URL, getVNPayReturnUrl } from "@/lib/env-config";
 
 import {
   formatVNPayAmount,
@@ -35,18 +36,9 @@ export class VNPayAPI {
   }) {
     this.tmnCode = config.tmnCode;
     this.hashSecret = config.hashSecret;
-    this.paymentUrl =
-      config.paymentUrl ||
-      process.env.VNPAY_PAYMENT_URL ||
-      "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-    this.apiUrl =
-      config.apiUrl ||
-      process.env.VNPAY_API_URL ||
-      "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
-    this.returnUrl =
-      config.returnUrl ||
-      process.env.VNPAY_RETURN_URL ||
-      `${process.env.APP_API_BASE_URL || "http://localhost:3000"}/api/vnpay/return`;
+    this.paymentUrl = config.paymentUrl || VNPAY_PAYMENT_GATEWAY_URL;
+    this.apiUrl = config.apiUrl || VNPAY_API_QUERY_URL;
+    this.returnUrl = config.returnUrl || getVNPayReturnUrl();
   }
 
   /**
@@ -59,16 +51,21 @@ export class VNPayAPI {
     ipAddr: string;
     bankCode?: string;
     locale?: "vn" | "en";
+    returnUrl?: string;
+    version?: string;
+    command?: "pay";
   }): Promise<VNPayCreatePaymentResponse> {
     const createDate = formatVNPayDate();
     const expireDate = formatVNPayDate(
       new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
     );
 
+    const command = params.command === "pay" ? "pay" : "pay";
+
     // Build request parameters
     const vnpParams: Record<string, string> = {
-      vnp_Version: "2.1.0",
-      vnp_Command: "pay",
+      vnp_Version: params.version || "2.1.0",
+      vnp_Command: command,
       vnp_TmnCode: this.tmnCode,
       vnp_Amount: formatVNPayAmount(params.amount).toString(),
       vnp_CurrCode: "VND",
@@ -76,7 +73,7 @@ export class VNPayAPI {
       vnp_OrderInfo: removeVietnameseDiacritics(params.orderInfo),
       vnp_OrderType: "other",
       vnp_Locale: params.locale || "vn",
-      vnp_ReturnUrl: this.returnUrl,
+      vnp_ReturnUrl: params.returnUrl || this.returnUrl,
       vnp_IpAddr: params.ipAddr,
       vnp_CreateDate: createDate,
       vnp_ExpireDate: expireDate,
@@ -90,8 +87,6 @@ export class VNPayAPI {
     // Generate secure hash
     const secureHash = this.generateSecureHash(vnpParams);
     vnpParams.vnp_SecureHash = secureHash;
-
-    console.log({vnpParams});
     
     // Build payment URL
     const paymentUrl = `${this.paymentUrl}?${querystring.stringify(vnpParams)}`;

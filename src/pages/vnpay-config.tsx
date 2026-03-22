@@ -17,6 +17,10 @@ interface ConfigEntry {
   secretKey: string;
   redirectUrl: string;
   ipnUrl: string;
+  vnpVersion: string;
+  vnpCommand: "pay";
+  vnpBankCode?: "VNPAYQR" | "VNBANK" | "INTCARD";
+  vnpLocale: "vn" | "en";
   environment: "sandbox" | "production";
   channelId?: string;
 }
@@ -33,6 +37,9 @@ export default function ConfigurationPage() {
   
   const [formData, setFormData] = useState<Partial<ConfigEntry>>({
     environment: "sandbox",
+    vnpVersion: "2.1.0",
+    vnpCommand: "pay",
+    vnpLocale: "vn",
   });
 
   // Use localStorage for standalone mode (development only)
@@ -101,7 +108,7 @@ export default function ConfigurationPage() {
         
         setShowForm(false);
         setEditingId(null);
-        setFormData({ environment: "sandbox" });
+        setFormData({ environment: "sandbox", vnpVersion: "2.1.0", vnpCommand: "pay", vnpLocale: "vn" });
         return;
       }
 
@@ -140,7 +147,7 @@ export default function ConfigurationPage() {
       await loadConfigs();
       setShowForm(false);
       setEditingId(null);
-      setFormData({ environment: "sandbox" });
+      setFormData({ environment: "sandbox", vnpVersion: "2.1.0", vnpCommand: "pay", vnpLocale: "vn" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save configuration");
     }
@@ -219,7 +226,7 @@ export default function ConfigurationPage() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormData({ environment: "sandbox" });
+    setFormData({ environment: "sandbox", vnpVersion: "2.1.0", vnpCommand: "pay", vnpLocale: "vn" });
     setError(null);
   };
 
@@ -338,6 +345,76 @@ export default function ConfigurationPage() {
               required
             />
 
+            <Input
+              label="VNPay Version (vnp_Version) *"
+              value={formData.vnpVersion || "2.1.0"}
+              onChange={(e) =>
+                setFormData({ ...formData, vnpVersion: e.target.value })
+              }
+              placeholder="2.1.0"
+              required
+            />
+
+            <Input
+              label="VNPay Command (vnp_Command)"
+              value={formData.vnpCommand || "pay"}
+              readOnly
+            />
+
+            <Box>
+              <label>
+                <Text><small>VNPay Locale (vnp_Locale) *</small></Text>
+                <select
+                  value={formData.vnpLocale || "vn"}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      vnpLocale: e.target.value as "vn" | "en",
+                    })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
+                >
+                  <option value="vn">vn - Vietnamese</option>
+                  <option value="en">en - English</option>
+                </select>
+              </label>
+            </Box>
+
+            <Box>
+              <label>
+                <Text><small>VNPay Bank Code (vnp_BankCode)</small></Text>
+                <select
+                  value={formData.vnpBankCode || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      vnpBankCode: (e.target.value || undefined) as
+                        | "VNPAYQR"
+                        | "VNBANK"
+                        | "INTCARD"
+                        | undefined,
+                    })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
+                >
+                  <option value="">Customer selects at VNPay</option>
+                  <option value="VNPAYQR">VNPAYQR - QR payment</option>
+                  <option value="VNBANK">VNBANK - Domestic ATM/Bank account</option>
+                  <option value="INTCARD">INTCARD - International card</option>
+                </select>
+              </label>
+            </Box>
+
             <Box>
               <label>
                 <Text><small>Environment *</small></Text>
@@ -411,6 +488,15 @@ export default function ConfigurationPage() {
                       >
                         {config.environment}
                       </span>
+                    </Text>
+                    <Text>
+                      <small>Version: <code>{config.vnpVersion || "2.1.0"}</code></small>
+                    </Text>
+                    <Text>
+                      <small>Locale: <code>{config.vnpLocale || "vn"}</code></small>
+                    </Text>
+                    <Text>
+                      <small>Bank: <code>{config.vnpBankCode || "auto"}</code></small>
                     </Text>
                   </Box>
                 </Box>

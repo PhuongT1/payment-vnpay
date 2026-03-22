@@ -2,6 +2,8 @@
  * Improved Transaction Initialize Session Webhook
  * Uses the new configuration management system
  * Follows Saleor Stripe app architecture
+ * 
+ * CRITICAL: VNPay return URL must point to STOREFRONT, not payment app!
  */
 
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
@@ -12,6 +14,8 @@ import {
   TransactionInitializeSessionDocument,
   TransactionInitializeSessionPayloadFragment,
 } from "@/generated/graphql";
+import { buildVNPayReturnUrl, validateStorefrontUrl } from "@/lib/vnpay/storefront-url-detector";
+import { getVNPayReturnUrl, VNPAY_IPN_WEBHOOK_URL } from "@/lib/env-config";
 
 export const config = {
   api: {
@@ -148,6 +152,22 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       console.log(`Using configuration: ${config.name}`);
 
+      // Build smart return URL that points to STOREFRONT
+      // This ensures VNPay redirects back to where the popup was opened
+      const checkoutId = sourceObject.__typename === 'Checkout' ? sourceObject.id : undefined;
+      const storefrontReturnUrl = buildVNPayReturnUrl(req, checkoutId);
+      
+      // Validate URL to prevent common mistake
+      if (!validateStorefrontUrl(storefrontReturnUrl)) {
+        console.error('❌ Invalid storefront URL detected!');
+        return res.status(500).json({
+          error: {
+            code: 'INVALID_STOREFRONT_URL',
+            message: 'Storefront URL configuration error. Set NEXT_PUBLIC_STOREFRONT_URL in .env',
+          },
+        });
+      }
+
       // Map UI config format to VNPayProviderClient format
       const providerConfig = {
         configurationId: config.id,
@@ -156,25 +176,94 @@ export default transactionInitializeSessionWebhook.createHandler(
         secretKey: config.hashSecret,
         environment: config.environment,
         channelId: sourceObject.channel.id,
-        redirectUrl: process.env.VNPAY_REDIRECT_URL || `${authData.saleorApiUrl.replace('/graphql/', '')}/api/vnpay/return`,
-        ipnUrl: process.env.VNPAY_IPN_URL || `${authData.saleorApiUrl.replace('/graphql/', '')}/api/vnpay/ipn`,
+        // CRITICAL: Return URL must point to STOREFRONT not payment app!
+        redirectUrl: storefrontReturnUrl,
+        // IPN URL points to payment app (backend webhook)
+        ipnUrl: VNPAY_IPN_WEBHOOK_URL,
       };
+      
+      console.log('🔧 VNPay configuration:', {
+        returnUrl: providerConfig.redirectUrl,
+        ipnUrl: providerConfig.ipnUrl,
+        environment: config.environment,
+      });
 
       // Initialize payment provider
       const providerClient = new VNPayProviderClient(providerConfig as any);
 
       // Get payment details
-      const amount = action.amount;
-      const currency = action.currency;
+      const originalAmount = action.amount;
+      const originalCurrency = action.currency;
       const orderId = merchantReference || sourceObject.id;
       const ipAddress = req.headers["x-forwarded-for"] as string || "127.0.0.1";
 
-      // Create payment
+      console.log("💰 Original payment amount:", {
+        amount: originalAmount,
+        currency: originalCurrency,
+        orderId,
+      });
+
+      // CRITICAL: VNPay only accepts VND
+      // Convert foreign currency to VND using exchange rate
+      let amountInVND = originalAmount;
+
+      if (originalCurrency !== "VND") {
+        // Get exchange rate from environment or use default
+        const exchangeRates: Record<string, number> = {
+          USD: parseFloat(process.env.EXCHANGE_RATE_USD_TO_VND || "25000"), // 1 USD = 25,000 VND
+          EUR: parseFloat(process.env.EXCHANGE_RATE_EUR_TO_VND || "27000"), // 1 EUR = 27,000 VND
+          // Add more currencies as needed
+        };
+
+        const rate = exchangeRates[originalCurrency];
+
+        if (!rate) {
+          console.error(`❌ Unsupported currency: ${originalCurrency}`);
+          return res.status(400).json({
+            error: {
+              code: "UNSUPPORTED_CURRENCY",
+              message: `VNPay only supports VND. Currency ${originalCurrency} is not supported or exchange rate not configured.`,
+            },
+          });
+        }
+
+        amountInVND = Math.round(originalAmount * rate);
+
+        console.log("💱 Currency conversion:", {
+          from: `${originalAmount} ${originalCurrency}`,
+          to: `${amountInVND} VND`,
+          rate,
+          calculation: `${originalAmount} × ${rate} = ${amountInVND}`,
+        });
+      }
+
+      // Validate amount
+      if (amountInVND < 5000) {
+        console.error("❌ Amount too small for VNPay (minimum: 5,000 VND)");
+        return res.status(400).json({
+          error: {
+            code: "AMOUNT_TOO_SMALL",
+            message: "Minimum payment amount is 5,000 VND",
+          },
+        });
+      }
+
+      if (amountInVND > 1000000000) {
+        console.error("❌ Amount too large for VNPay (maximum: 1,000,000,000 VND)");
+        return res.status(400).json({
+          error: {
+            code: "AMOUNT_TOO_LARGE",
+            message: "Maximum payment amount is 1,000,000,000 VND",
+          },
+        });
+      }
+
+      // Create payment with converted VND amount
       const paymentResult = await providerClient.createPayment({
         orderId,
-        amount,
-        currency,
-        orderInfo: `Order ${orderId} - ${amount} ${currency}`,
+        amount: amountInVND,
+        currency: "VND",
+        orderInfo: `Order ${orderId} - ${originalAmount} ${originalCurrency} (${amountInVND} VND)`,
         ipAddress,
       });
 
@@ -188,17 +277,30 @@ export default transactionInitializeSessionWebhook.createHandler(
         });
       }
 
-      console.log("Payment created successfully:", paymentResult.transactionRef);
+      console.log("✅ Payment created successfully:", {
+        transactionRef: paymentResult.transactionRef,
+        originalAmount: `${originalAmount} ${originalCurrency}`,
+        vnpayAmount: `${amountInVND} VND`,
+      });
 
       // Return success response with payment URL
+      // NOTE: Return original amount to Saleor (it tracks in original currency)
+      // But VNPay payment URL already has converted VND amount
       return res.status(200).json({
         pspReference: paymentResult.transactionRef,
         data: {
           paymentUrl: paymentResult.paymentUrl,
           configurationId: config.configurationId,
+          // Include conversion info for debugging
+          currencyConversion: originalCurrency !== "VND" ? {
+            originalAmount,
+            originalCurrency,
+            convertedAmount: amountInVND,
+            convertedCurrency: "VND",
+          } : undefined,
         },
         result: "AUTHORIZATION_ACTION_REQUIRED",
-        amount: action.amount,
+        amount: action.amount, // Keep original amount for Saleor tracking
         actions: [
           {
             actionType: "REDIRECT",

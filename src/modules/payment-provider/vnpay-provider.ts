@@ -89,8 +89,11 @@ export class VNPayProviderClient {
         amount: params.amount,
         orderInfo: params.orderInfo,
         ipAddr: params.ipAddress,
-        bankCode: undefined, // Let user choose at VNPay
-        locale: "vn",
+        bankCode: this.config.vnpBankCode,
+        locale: this.config.vnpLocale,
+        version: this.config.vnpVersion,
+        command: this.config.vnpCommand,
+        returnUrl: this.config.redirectUrl,
       });
 
       return {
