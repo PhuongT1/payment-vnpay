@@ -17,7 +17,6 @@ import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { saleorApp } from "@/saleor-app";
 import { createClient } from "@/lib/create-graphql-client";
 import { VNPayAPI } from "@/lib/vnpay/vnpay-api";
-import { VNPAY_PAYMENT_GATEWAY_URL, VNPAY_API_QUERY_URL } from "@/lib/env-config";
 
 export const config = {
   api: {
@@ -127,15 +126,6 @@ export default transactionProcessSessionWebhook.createHandler(async (req, res, c
         : allConfigs.find((c: any) => c.isActive);
     }
 
-    // Fallback to env variables
-    if (!activeConfig) {
-      const envTmnCode = process.env.VNPAY_TMN_CODE;
-      const envHashSecret = process.env.VNPAY_HASH_SECRET;
-      if (envTmnCode && envHashSecret) {
-        activeConfig = { tmnCode: envTmnCode, hashSecret: envHashSecret };
-      }
-    }
-
     if (!activeConfig) {
       console.error(`❌ [Payment Process] txId=${txId} — No active VNPay config found`);
       return res.status(200).json({
@@ -146,12 +136,22 @@ export default transactionProcessSessionWebhook.createHandler(async (req, res, c
       });
     }
 
+    const paymentUrl =
+      activeConfig.environment === "production"
+        ? "https://payment.vnpay.vn/paymentv2/vpcpay.html"
+        : "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+
+    const apiUrl =
+      activeConfig.environment === "production"
+        ? "https://payment.vnpay.vn/merchant_webapi/api/transaction"
+        : "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
+
     // Create VNPay API with active config to verify signature
     const vnpayAPI = new VNPayAPI({
       tmnCode: activeConfig.tmnCode,
       hashSecret: activeConfig.hashSecret,
-      paymentUrl: VNPAY_PAYMENT_GATEWAY_URL,
-      apiUrl: VNPAY_API_QUERY_URL,
+      paymentUrl,
+      apiUrl,
     });
 
     // Verify VNPay signature to prevent tampering

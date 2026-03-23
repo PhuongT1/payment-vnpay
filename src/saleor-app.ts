@@ -6,7 +6,11 @@ import { EnvAPL } from "@saleor/app-sdk/APL/env";
 
 export let apl: APL;
 
-switch (process.env.APL) {
+const resolvedAplMode =
+  process.env.APL ||
+  (process.env.UPSTASH_URL && process.env.UPSTASH_TOKEN ? "upstash" : "file");
+
+switch (resolvedAplMode) {
   case "upstash": {
     if (!process.env.UPSTASH_URL || !process.env.UPSTASH_TOKEN) {
       throw new Error("UPSTASH_URL and UPSTASH_TOKEN are required when APL=upstash");
@@ -37,7 +41,13 @@ switch (process.env.APL) {
     break;
   }
   default: {
-    // FileAPL - local dev only. Does NOT work on Vercel (no persistent filesystem).
+    // FileAPL should be used only for local development.
+    // In serverless production it can cause intermittent AUTHORIZATION_FAILURE due to non-persistent storage.
+    if (process.env.NODE_ENV === "production") {
+      console.warn(
+        "[saleor-app] Using FileAPL in production can break webhook auth. Set APL=upstash with UPSTASH_URL/UPSTASH_TOKEN for stable deployment."
+      );
+    }
     apl = new FileAPL();
   }
 }

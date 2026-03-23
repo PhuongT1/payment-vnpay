@@ -14,8 +14,7 @@ import {
   TransactionInitializeSessionDocument,
   TransactionInitializeSessionPayloadFragment,
 } from "@/generated/graphql";
-import { buildVNPayReturnUrl, validateStorefrontUrl } from "@/lib/vnpay/storefront-url-detector";
-import { getVNPayReturnUrl, VNPAY_IPN_WEBHOOK_URL } from "@/lib/env-config";
+import { validateStorefrontUrl } from "@/lib/vnpay/storefront-url-detector";
 
 export const config = {
   api: {
@@ -118,7 +117,7 @@ export default transactionInitializeSessionWebhook.createHandler(
       }
 
       // Find config by mapping or use first active config
-      let config = configId 
+      let config = configId
         ? allConfigs.find((c: any) => c.id === configId && c.isActive)
         : allConfigs.find((c: any) => c.isActive);
 
@@ -129,48 +128,28 @@ export default transactionInitializeSessionWebhook.createHandler(
       } : "NOT FOUND");
 
       if (!config) {
-        // Fallback to environment variables for development
-        console.log("⚙️ No config in metadata, checking environment variables...");
-        
-        const envTmnCode = process.env.VNPAY_TMN_CODE;
-        const envHashSecret = process.env.VNPAY_HASH_SECRET;
-        const envEnvironment = process.env.VNPAY_ENVIRONMENT || "sandbox";
-        
-        if (envTmnCode && envHashSecret) {
-          console.log("✅ Using config from environment variables");
-          config = {
-            id: "env_default",
-            name: "Environment Config",
-            tmnCode: envTmnCode,
-            hashSecret: envHashSecret,
-            environment: envEnvironment as "sandbox" | "production",
-            isActive: true,
-          };
-        } else {
-          console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — No active VNPay config in metadata or env`);
-          return res.status(400).json({
-            error: {
-              code: "CONFIGURATION_NOT_FOUND",
-              message: "No active VNPay configuration found. Please activate a configuration in the app settings.",
-            },
-          });
-        }
+        console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — No active VNPay config in metadata`);
+        return res.status(400).json({
+          error: {
+            code: "CONFIGURATION_NOT_FOUND",
+            message: "No active VNPay configuration found for this channel. Please assign and activate a configuration in app settings.",
+          },
+        });
       }
 
       console.log(`Using configuration: ${config.name}`);
 
-      // Build return URL: priority = config.returnUrl > auto-detect from headers
-      const checkoutId = sourceObject.__typename === 'Checkout' ? sourceObject.id : undefined;
-      let storefrontReturnUrl: string;
+      // Return URL must always come from user configuration
+      const storefrontReturnUrl = (config.returnUrl || "").trim();
 
-      if (config.returnUrl && config.returnUrl.trim() !== '') {
-        // Use URL from config (set by user in dashboard UI)
-        storefrontReturnUrl = config.returnUrl.trim();
-        console.log('🔧 Using returnUrl from config:', storefrontReturnUrl);
-      } else {
-        // Fallback: auto-detect from request headers
-        storefrontReturnUrl = buildVNPayReturnUrl(req, checkoutId);
-        console.log('🔍 Auto-detected returnUrl from request:', storefrontReturnUrl);
+      if (!storefrontReturnUrl) {
+        console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — Missing returnUrl in selected configuration`);
+        return res.status(400).json({
+          error: {
+            code: "CONFIGURATION_NOT_VALID",
+            message: "Selected VNPay configuration is missing returnUrl.",
+          },
+        });
       }
 
       // Validate URL to prevent common mistake
@@ -179,15 +158,24 @@ export default transactionInitializeSessionWebhook.createHandler(
         return res.status(500).json({
           error: {
             code: 'INVALID_STOREFRONT_URL',
-            message: 'Storefront URL configuration error. Set returnUrl in VNPay config or NEXT_PUBLIC_STOREFRONT_URL in .env',
+            message: 'Storefront URL configuration error. Set a valid returnUrl in VNPay configuration.',
           },
         });
       }
 
-      // IPN URL: priority = config.ipnUrl > env variable
-      const ipnUrl = (config.ipnUrl && config.ipnUrl.trim() !== '') 
-        ? config.ipnUrl.trim() 
-        : VNPAY_IPN_WEBHOOK_URL;
+      // IPN URL must always come from user configuration
+      const ipnUrl = (config.ipnUrl || "").trim();
+
+      if (!ipnUrl) {
+        console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — Missing ipnUrl in selected configuration`);
+        return res.status(400).json({
+          error: {
+            code: "CONFIGURATION_NOT_VALID",
+            message: "Selected VNPay configuration is missing ipnUrl.",
+          },
+        });
+      }
+
       console.log('📡 IPN URL:', ipnUrl);
 
       // Map UI config format to VNPayProviderClient format
@@ -198,9 +186,9 @@ export default transactionInitializeSessionWebhook.createHandler(
         secretKey: config.hashSecret,
         environment: config.environment,
         channelId: sourceObject.channel.id,
-        // Return URL from config or auto-detected
+        // Return URL from selected user configuration
         redirectUrl: storefrontReturnUrl,
-        // IPN URL from config or env
+        // IPN URL from selected user configuration
         ipnUrl: ipnUrl,
       };
       
@@ -208,7 +196,7 @@ export default transactionInitializeSessionWebhook.createHandler(
         returnUrl: providerConfig.redirectUrl,
         ipnUrl: providerConfig.ipnUrl,
         environment: config.environment,
-        returnUrlSource: (config.returnUrl && config.returnUrl.trim() !== '') ? 'config' : 'auto-detect',
+        returnUrlSource: 'config',
       });
 
       // Initialize payment provider

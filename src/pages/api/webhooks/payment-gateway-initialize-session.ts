@@ -99,6 +99,13 @@ export default paymentGatewayInitializeSessionWebhook.createHandler(
         return res.status(200).json({ data: [] });
       }
 
+      const activeConfigs = configs.filter((c) => c?.isActive);
+
+      if (activeConfigs.length === 0) {
+        console.log("No active VNPay configurations - gateway not available");
+        return res.status(200).json({ data: [] });
+      }
+
       // Check if there's a mapping for this channel
       const mappingMetadata = metadataResult.data?.app?.privateMetadata?.find(
         (item: any) => item.key === "vnpay:channel_mappings"
@@ -115,12 +122,13 @@ export default paymentGatewayInitializeSessionWebhook.createHandler(
 
       // Check if this channel has a VNPay configuration assigned
       const channelConfigId = mappings[sourceObject.channel.id];
-      const hasConfig = channelConfigId && configs.some(c => c.id === channelConfigId);
+      const selectedConfig = channelConfigId
+        ? activeConfigs.find((c) => c.id === channelConfigId)
+        : activeConfigs[0];
 
-      if (!hasConfig) {
+      if (!selectedConfig) {
         console.log(`No VNPay configuration assigned to channel ${sourceObject.channel.slug}`);
-        // Still return gateway but it might fail later
-        // Alternative: return empty array to hide gateway
+        return res.status(200).json({ data: [] });
       }
 
       // Return VNPay as available payment gateway
@@ -139,7 +147,7 @@ export default paymentGatewayInitializeSessionWebhook.createHandler(
               },
               {
                 field: "environment",
-                value: configs[0]?.environment || "sandbox",
+                value: selectedConfig.environment || "sandbox",
               },
             ],
           },
