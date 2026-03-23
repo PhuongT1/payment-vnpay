@@ -97,86 +97,48 @@ const IndexPage = () => {
     }
   }, [appBridgeState?.saleorApiUrl, appBridgeState?.ready]);
 
-  const loadChannels = useCallback(async () => {
-    try {
-      // Fetch real channels from Saleor API
-      const saleorApiUrl = appBridgeState?.saleorApiUrl;
-      if (!saleorApiUrl) {
-        console.warn("No Saleor API URL available, using mock channels");
-        setChannels([
-          { id: "1", name: "Default Channel", slug: "default-channel" },
-          { id: "2", name: "Channel-PLN", slug: "channel-pln" },
-        ]);
-        return;
-      }
-
-      const response = await fetch("/api/channels", {
-        headers: {
-          "saleor-api-url": saleorApiUrl,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch channels");
-      }
-
-      const data = await response.json();
-      
-      if (data.channels && Array.isArray(data.channels)) {
-        const formattedChannels = data.channels.map((ch: any) => ({
-          id: ch.id,
-          name: ch.name,
-          slug: ch.slug,
-        }));
-        setChannels(formattedChannels);
-      } else {
-        // Fallback to mock if API returns invalid data
-        setChannels([
-          { id: "1", name: "Default Channel", slug: "default-channel" },
-        ]);
-      }
-    } catch (error) {
-      console.error("Error loading channels:", error);
-      // Fallback to mock channels on error
+  // Combined loader — fetches channels and mappings in parallel then merges
+  // them together in a single setState call, avoiding the race condition where
+  // loadMappings ran before loadChannels and merged into an empty array.
+  const loadChannelsWithMappings = useCallback(async () => {
+    const saleorApiUrl = appBridgeState?.saleorApiUrl;
+    if (!saleorApiUrl) {
+      console.warn("No Saleor API URL available, using mock channels");
       setChannels([
         { id: "1", name: "Default Channel", slug: "default-channel" },
+        { id: "2", name: "Channel-PLN", slug: "channel-pln" },
       ]);
+      return;
     }
-  }, [appBridgeState?.saleorApiUrl]);
 
-  const loadMappings = useCallback(async () => {
     try {
-      const saleorApiUrl = appBridgeState?.saleorApiUrl;
-      if (!saleorApiUrl) {
-        console.warn("No Saleor API URL available for mappings");
-        return;
-      }
+      const headers = { "saleor-api-url": saleorApiUrl };
+      const [channelsRes, mappingsRes] = await Promise.all([
+        fetch("/api/channels", { headers }),
+        fetch("/api/mappings", { headers }),
+      ]);
 
-      const response = await fetch("/api/mappings", {
-        headers: {
-          "saleor-api-url": saleorApiUrl,
-        },
-      });
+      const channelsData = await channelsRes.json();
+      const mappingsData = await mappingsRes.json();
+      const mappings: { channelId: string; configId: string }[] = mappingsData.mappings || [];
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch mappings");
-      }
-
-      const data = await response.json();
-      const mappings = data.mappings || [];
-
-      // Merge mappings into channels
-      setChannels((currentChannels) =>
-        currentChannels.map((ch) => {
-          const mapping = mappings.find((m: any) => m.channelId === ch.id);
+      if (channelsData.channels && Array.isArray(channelsData.channels)) {
+        const formattedChannels = channelsData.channels.map((ch: any) => {
+          const mapping = mappings.find((m) => m.channelId === ch.id);
           return {
-            ...ch,
+            id: ch.id,
+            name: ch.name,
+            slug: ch.slug,
             configId: mapping?.configId || undefined,
           };
-        })
-      );
+        });
+        setChannels(formattedChannels);
+      } else {
+        setChannels([{ id: "1", name: "Default Channel", slug: "default-channel" }]);
+      }
     } catch (error) {
-      console.error("Error loading mappings:", error);
+      console.error("Error loading channels + mappings:", error);
+      setChannels([{ id: "1", name: "Default Channel", slug: "default-channel" }]);
     }
   }, [appBridgeState?.saleorApiUrl]);
 
@@ -184,10 +146,9 @@ const IndexPage = () => {
   useEffect(() => {
     if (appBridgeState?.ready) {
       loadConfigs();
-      loadChannels();
-      loadMappings();
+      loadChannelsWithMappings();
     }
-  }, [appBridgeState?.ready, loadConfigs, loadChannels, loadMappings]);
+  }, [appBridgeState?.ready, loadConfigs, loadChannelsWithMappings]);
 
   const handleAddConfig = async () => {
     try {
@@ -339,7 +300,12 @@ const IndexPage = () => {
         return;
       }
 
-      // Auto-save channel mapping to Saleor Metadata API
+      // Optimistic UI update immediately
+      setChannels((prev) =>
+        prev.map((ch) => (ch.id === channelId ? { ...ch, configId: configId || undefined } : ch))
+      );
+
+      // Save to Saleor Metadata API
       const response = await fetch("/api/mappings", {
         method: "POST",
         headers: {
@@ -348,7 +314,7 @@ const IndexPage = () => {
         },
         body: JSON.stringify({
           channelId,
-          configId: configId || null, // null to remove mapping
+          configId: configId || null,
         }),
       });
 
@@ -356,14 +322,13 @@ const IndexPage = () => {
         throw new Error("Failed to save channel mapping");
       }
 
-      // Update local state immediately for better UX
-      const updated = channels.map((ch) =>
-        ch.id === channelId ? { ...ch, configId: configId || undefined } : ch
-      );
-      setChannels(updated);
+      // Reload from server to confirm what was saved
+      await loadChannelsWithMappings();
     } catch (error) {
       console.error("Error saving channel mapping:", error);
       alert("Failed to save channel mapping. Please try again.");
+      // Revert optimistic update on error
+      await loadChannelsWithMappings();
     }
   };
 
