@@ -5,23 +5,20 @@ import { createClient } from "@/lib/create-graphql-client";
 const SALEOR_API_URL_HEADER = "saleor-api-url";
 const APP_IDENTIFIER = "vnpay.payment.app";
 
+// Use `app` (no ID) — returns the current app using its own token. No MANAGE_APPS permission needed.
 const GET_APPS_AND_WEBHOOKS_QUERY = `
-  query GetAppsAndWebhooks {
-    apps(first: 100) {
-      edges {
-        node {
-          id
-          identifier
-          name
-          isActive
-          webhooks {
-            id
-            name
-            isActive
-            syncEvents {
-              eventType
-            }
-          }
+  query GetCurrentApp {
+    app {
+      id
+      identifier
+      name
+      isActive
+      webhooks {
+        id
+        name
+        isActive
+        syncEvents {
+          eventType
         }
       }
     }
@@ -69,18 +66,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const apps = data?.apps?.edges?.map((e: any) => e.node) || [];
-    const vnpayApp = apps.find((app: any) => app.identifier === APP_IDENTIFIER);
+    const vnpayApp = data?.app;
 
     if (!vnpayApp) {
       return res.status(404).json({
-        error: `App with identifier ${APP_IDENTIFIER} not found`,
-        foundApps: apps.map((a: any) => ({
-          id: a.id,
-          identifier: a.identifier,
-          name: a.name,
-          isActive: a.isActive,
-        })),
+        error: "Could not retrieve current app data. Ensure the app is installed and APL token is valid.",
       });
     }
 
