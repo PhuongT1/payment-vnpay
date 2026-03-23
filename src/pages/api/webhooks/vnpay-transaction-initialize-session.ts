@@ -14,7 +14,7 @@ import {
   TransactionInitializeSessionDocument,
   TransactionInitializeSessionPayloadFragment,
 } from "@/generated/graphql";
-import { validateStorefrontUrl } from "@/lib/vnpay/storefront-url-detector";
+
 
 export const config = {
   api: {
@@ -86,11 +86,11 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       if (!configMetadata?.value) {
         console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — No VNPay configuration found in metadata`);
-        return res.status(400).json({
-          error: {
-            code: "CONFIGURATION_NOT_FOUND",
-            message: "No VNPay configuration found. Please configure VNPay in the app settings.",
-          },
+        return res.status(200).json({
+          result: "CHARGE_FAILURE",
+          amount: action.amount,
+          pspReference: `err_no_config_${Date.now()}`,
+          message: "No VNPay configuration found. Please configure VNPay in the app settings.",
         });
       }
 
@@ -129,11 +129,11 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       if (!config) {
         console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — No active VNPay config in metadata`);
-        return res.status(400).json({
-          error: {
-            code: "CONFIGURATION_NOT_FOUND",
-            message: "No active VNPay configuration found for this channel. Please assign and activate a configuration in app settings.",
-          },
+        return res.status(200).json({
+          result: "CHARGE_FAILURE",
+          amount: action.amount,
+          pspReference: `err_no_active_config_${Date.now()}`,
+          message: "No active VNPay configuration found for this channel. Please assign and activate a configuration in app settings.",
         });
       }
 
@@ -144,22 +144,11 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       if (!storefrontReturnUrl) {
         console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — Missing returnUrl in selected configuration`);
-        return res.status(400).json({
-          error: {
-            code: "CONFIGURATION_NOT_VALID",
-            message: "Selected VNPay configuration is missing returnUrl.",
-          },
-        });
-      }
-
-      // Validate URL to prevent common mistake
-      if (!validateStorefrontUrl(storefrontReturnUrl)) {
-        console.error('❌ Invalid storefront URL detected!');
-        return res.status(500).json({
-          error: {
-            code: 'INVALID_STOREFRONT_URL',
-            message: 'Storefront URL configuration error. Set a valid returnUrl in VNPay configuration.',
-          },
+        return res.status(200).json({
+          result: "CHARGE_FAILURE",
+          amount: action.amount,
+          pspReference: `err_no_return_url_${Date.now()}`,
+          message: "Selected VNPay configuration is missing returnUrl. Please update the configuration.",
         });
       }
 
@@ -168,11 +157,11 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       if (!ipnUrl) {
         console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} — Missing ipnUrl in selected configuration`);
-        return res.status(400).json({
-          error: {
-            code: "CONFIGURATION_NOT_VALID",
-            message: "Selected VNPay configuration is missing ipnUrl.",
-          },
+        return res.status(200).json({
+          result: "CHARGE_FAILURE",
+          amount: action.amount,
+          pspReference: `err_no_ipn_url_${Date.now()}`,
+          message: "Selected VNPay configuration is missing ipnUrl. Please update the configuration.",
         });
       }
 
@@ -230,11 +219,11 @@ export default transactionInitializeSessionWebhook.createHandler(
 
         if (!rate) {
           console.error(`❌ Unsupported currency: ${originalCurrency}`);
-          return res.status(400).json({
-            error: {
-              code: "UNSUPPORTED_CURRENCY",
-              message: `VNPay only supports VND. Currency ${originalCurrency} is not supported or exchange rate not configured.`,
-            },
+          return res.status(200).json({
+            result: "CHARGE_FAILURE",
+            amount: action.amount,
+            pspReference: `err_unsupported_currency_${Date.now()}`,
+            message: `VNPay only supports VND. Currency ${originalCurrency} is not supported.`,
           });
         }
 
@@ -251,21 +240,21 @@ export default transactionInitializeSessionWebhook.createHandler(
       // Validate amount
       if (amountInVND < 5000) {
         console.error("❌ Amount too small for VNPay (minimum: 5,000 VND)");
-        return res.status(400).json({
-          error: {
-            code: "AMOUNT_TOO_SMALL",
-            message: "Minimum payment amount is 5,000 VND",
-          },
+        return res.status(200).json({
+          result: "CHARGE_FAILURE",
+          amount: action.amount,
+          pspReference: `err_amount_too_small_${Date.now()}`,
+          message: "Minimum payment amount is 5,000 VND.",
         });
       }
 
       if (amountInVND > 1000000000) {
         console.error("❌ Amount too large for VNPay (maximum: 1,000,000,000 VND)");
-        return res.status(400).json({
-          error: {
-            code: "AMOUNT_TOO_LARGE",
-            message: "Maximum payment amount is 1,000,000,000 VND",
-          },
+        return res.status(200).json({
+          result: "CHARGE_FAILURE",
+          amount: action.amount,
+          pspReference: `err_amount_too_large_${Date.now()}`,
+          message: "Maximum payment amount is 1,000,000,000 VND.",
         });
       }
 
@@ -280,11 +269,11 @@ export default transactionInitializeSessionWebhook.createHandler(
 
       if (!paymentResult.success) {
         console.error(`❌ [Payment Init] checkoutId=${logCheckoutId} amount=${amountInVND}VND — Payment creation failed: ${paymentResult.errorMessage}`);
-        return res.status(400).json({
-          error: {
-            code: "PAYMENT_CREATION_FAILED",
-            message: paymentResult.errorMessage || "Failed to create payment",
-          },
+        return res.status(200).json({
+          result: "CHARGE_FAILURE",
+          amount: action.amount,
+          pspReference: `err_payment_failed_${Date.now()}`,
+          message: paymentResult.errorMessage || "Failed to create VNPay payment.",
         });
       }
 
@@ -309,12 +298,11 @@ export default transactionInitializeSessionWebhook.createHandler(
       });
     } catch (error) {
       console.error("Transaction initialize error:", error);
-      
-      return res.status(500).json({
-        error: {
-          code: "INTERNAL_ERROR",
-          message: error instanceof Error ? error.message : "Internal server error",
-        },
+      return res.status(200).json({
+        result: "CHARGE_FAILURE",
+        amount: (context.payload as any)?.action?.amount ?? 0,
+        pspReference: `err_exception_${Date.now()}`,
+        message: error instanceof Error ? error.message : "Internal server error",
       });
     }
   }
