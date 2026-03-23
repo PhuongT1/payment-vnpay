@@ -2,20 +2,12 @@ import { APL } from "@saleor/app-sdk/APL";
 import { SaleorApp } from "@saleor/app-sdk/saleor-app";
 import { FileAPL } from "@saleor/app-sdk/APL/file";
 import { UpstashAPL } from "@saleor/app-sdk/APL/upstash";
+import { EnvAPL } from "@saleor/app-sdk/APL/env";
 
-/**
- * By default auth data are stored in the `.auth-data.json` (FileAPL).
- * For multi-tenant applications and deployments please use UpstashAPL.
- *
- * To read more about storing auth data, read the
- * [APL documentation](https://github.com/saleor/saleor-app-sdk/blob/main/docs/apl.md)
- */
 export let apl: APL;
 
 switch (process.env.APL) {
   case "upstash": {
-    // Upstash Redis - for production deployments (Vercel, Railway, etc.)
-    // Required env vars: UPSTASH_URL, UPSTASH_TOKEN
     if (!process.env.UPSTASH_URL || !process.env.UPSTASH_TOKEN) {
       throw new Error("UPSTASH_URL and UPSTASH_TOKEN are required when APL=upstash");
     }
@@ -25,8 +17,27 @@ switch (process.env.APL) {
     });
     break;
   }
+  case "env": {
+    /**
+     * EnvAPL — for Vercel without Upstash.
+     * Steps:
+     *   1. Deploy with APL=env and APL_PRINT_ON_REGISTER=true
+     *   2. Reinstall app in Saleor Dashboard → check Vercel logs for auth data
+     *   3. Set APL_TOKEN, APL_SALEOR_API_URL, APL_APP_ID in Vercel env vars
+     *   4. Redeploy with APL_PRINT_ON_REGISTER=false
+     */
+    apl = new EnvAPL({
+      env: {
+        token: process.env.APL_TOKEN ?? "",
+        saleorApiUrl: process.env.APL_SALEOR_API_URL ?? "",
+        appId: process.env.APL_APP_ID ?? "",
+      },
+      printAuthDataOnRegister: process.env.APL_PRINT_ON_REGISTER === "true",
+    });
+    break;
+  }
   default: {
-    // FileAPL - for local development only (won't work on Vercel/Railway)
+    // FileAPL - local dev only. Does NOT work on Vercel (no persistent filesystem).
     apl = new FileAPL();
   }
 }
