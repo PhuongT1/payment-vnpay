@@ -10,7 +10,6 @@ import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { saleorApp } from "@/saleor-app";
 import { createClient } from "@/lib/create-graphql-client";
 import { VNPayProviderClient } from "@/modules/payment-provider/vnpay-provider";
-import { getExchangeRate } from "@/lib/env-config";
 import {
   TransactionInitializeSessionDocument,
   TransactionInitializeSessionPayloadFragment,
@@ -132,23 +131,14 @@ export default transactionInitializeSessionWebhook.createHandler(
         ipnUrl,
       } as any);
 
-      const rawAmount = action.amount;
+      // action.amount is already in the channel currency (VND if channel uses VND)
+      // Saleor handles currency — no conversion needed here
+      const amount = action.amount;
       const currency = action.currency;
       const orderId = merchantReference || sourceObject.id;
       const ipAddress = req.headers["x-forwarded-for"] as string || "127.0.0.1";
 
-      // Convert amount to VND using per-config exchange rates (fallback to env-config)
-      const configRates: Record<string, number> = config.exchangeRates || {};
-      const currencyKey = currency.toUpperCase();
-      const exchangeRate =
-        currencyKey in configRates
-          ? configRates[currencyKey]
-          : currencyKey === "VND"
-          ? 1
-          : getExchangeRate(currency);
-      const amount = Math.round(rawAmount * exchangeRate);
-
-      console.log("💰 Payment:", { rawAmount, currency, exchangeRate, amountVND: amount, orderId });
+      console.log("💰 Payment:", { amount, currency, orderId });
 
       if (amount < 5000) {
         return res.status(200).json({
@@ -168,11 +158,11 @@ export default transactionInitializeSessionWebhook.createHandler(
         });
       }
 
-      // Amount is already in VND after conversion
+      // Amount is passed as-is from Saleor (channel currency)
       const paymentResult = await providerClient.createPayment({
         orderId,
         amount,
-        currency: "VND",
+        currency,
         orderInfo: `Order ${orderId} - ${amount} VND`,
         ipAddress,
       });
