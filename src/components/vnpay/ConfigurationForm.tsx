@@ -3,7 +3,7 @@
  * Form for creating/editing VNPay configurations
  */
 
-import React from "react";
+import React, { useState } from "react";
 
 interface ConfigFormData {
   name: string;
@@ -16,6 +16,7 @@ interface ConfigFormData {
   vnpBankCode: "" | "VNPAYQR" | "VNBANK" | "INTCARD";
   vnpLocale: "vn" | "en";
   environment: "sandbox" | "production";
+  exchangeRates: Record<string, number>;
 }
 
 interface ConfigurationFormProps {
@@ -50,6 +51,9 @@ export const ConfigurationForm: React.FC<ConfigurationFormProps> = ({
   onSave,
   onCancel,
 }) => {
+  const [newCurrency, setNewCurrency] = useState("");
+  const [newRate, setNewRate] = useState("");
+
   const isValid = formData.name && formData.tmnCode && formData.hashSecret && formData.returnUrl && formData.ipnUrl;
 
   const buttonSaveStyle = {
@@ -223,6 +227,177 @@ export const ConfigurationForm: React.FC<ConfigurationFormProps> = ({
           <option value="sandbox">Sandbox (sandbox.vnpayment.vn)</option>
           <option value="production">Production (payment.vnpay.vn)</option>
         </select>
+      </div>
+
+      {/* Exchange Rates Section */}
+      <div style={{ marginBottom: "24px" }}>
+        <label style={labelStyle}>
+          Tỉ giá quy đổi sang VND
+          <span style={{ marginLeft: 8, fontWeight: 400, fontSize: 12, color: "#6b7280" }}>
+            (dùng khi channel Saleor dùng ngoại tệ)
+          </span>
+        </label>
+        <div
+          style={{
+            border: "1px solid #e5e7eb",
+            borderRadius: "8px",
+            overflow: "hidden",
+            marginBottom: "8px",
+          }}
+        >
+          {/* VND is always 1:1 */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 12px",
+              background: "#f9fafb",
+              borderBottom: "1px solid #e5e7eb",
+            }}
+          >
+            <span
+              style={{
+                width: 80,
+                fontWeight: 600,
+                fontSize: 14,
+                color: "#374151",
+                fontFamily: "monospace",
+              }}
+            >
+              VND
+            </span>
+            <span style={{ color: "#6b7280", fontSize: 14 }}>=</span>
+            <span style={{ fontSize: 14, color: "#6b7280" }}>1 (mặc định, không thể thay đổi)</span>
+          </div>
+          {Object.entries(formData.exchangeRates).map(([currency, rate]) => (
+            <div
+              key={currency}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 12px",
+                borderBottom: "1px solid #f3f4f6",
+              }}
+            >
+              <input
+                type="text"
+                value={currency}
+                readOnly
+                style={{
+                  width: 80,
+                  padding: "6px 8px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 4,
+                  fontSize: 14,
+                  fontFamily: "monospace",
+                  fontWeight: 600,
+                  background: "#f3f4f6",
+                  textTransform: "uppercase",
+                }}
+              />
+              <span style={{ color: "#6b7280", fontSize: 14 }}>=</span>
+              <input
+                type="number"
+                value={rate}
+                min={1}
+                onChange={(e) => {
+                  const updated = { ...formData.exchangeRates, [currency]: Number(e.target.value) };
+                  onFormChange({ ...formData, exchangeRates: updated });
+                }}
+                style={{ ...inputStyle, width: 160, padding: "6px 8px" }}
+              />
+              <span style={{ fontSize: 12, color: "#6b7280" }}>VND</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = { ...formData.exchangeRates };
+                  delete updated[currency];
+                  onFormChange({ ...formData, exchangeRates: updated });
+                }}
+                style={{
+                  marginLeft: "auto",
+                  padding: "4px 10px",
+                  background: "#fff",
+                  border: "1px solid #fca5a5",
+                  borderRadius: 4,
+                  color: "#dc2626",
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                Xóa
+              </button>
+            </div>
+          ))}
+          {/* Add new currency row */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 12px",
+              background: "#f9fafb",
+            }}
+          >
+            <input
+              type="text"
+              value={newCurrency}
+              onChange={(e) => setNewCurrency(e.target.value.toUpperCase())}
+              placeholder="VD: JPY"
+              maxLength={5}
+              style={{
+                width: 80,
+                padding: "6px 8px",
+                border: "1px solid #d1d5db",
+                borderRadius: 4,
+                fontSize: 14,
+                fontFamily: "monospace",
+              }}
+            />
+            <span style={{ color: "#6b7280", fontSize: 14 }}>=</span>
+            <input
+              type="number"
+              value={newRate}
+              min={1}
+              onChange={(e) => setNewRate(e.target.value)}
+              placeholder="Tỉ giá"
+              style={{ ...inputStyle, width: 160, padding: "6px 8px" }}
+            />
+            <span style={{ fontSize: 12, color: "#6b7280" }}>VND</span>
+            <button
+              type="button"
+              onClick={() => {
+                const code = newCurrency.trim().toUpperCase();
+                const rate = Number(newRate);
+                if (!code || code === "VND" || rate <= 0) return;
+                onFormChange({
+                  ...formData,
+                  exchangeRates: { ...formData.exchangeRates, [code]: rate },
+                });
+                setNewCurrency("");
+                setNewRate("");
+              }}
+              style={{
+                marginLeft: "auto",
+                padding: "5px 12px",
+                background: "#1976d2",
+                border: "none",
+                borderRadius: 4,
+                color: "#fff",
+                fontSize: 12,
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Thêm
+            </button>
+          </div>
+        </div>
+        <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
+          Mỗi đơn vị ngoại tệ chuyển thành bao nhiêu VND. Ví dụ: 1 USD = 25.000 VND.
+        </p>
       </div>
 
       <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>

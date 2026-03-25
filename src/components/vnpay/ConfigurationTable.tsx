@@ -15,6 +15,7 @@ export interface VNPayConfig {
   vnpBankCode?: string;
   vnpLocale?: string;
   environment: "sandbox" | "production";
+  exchangeRates?: Record<string, number>;
   isActive: boolean;
   createdAt: string;
 }
@@ -84,6 +85,28 @@ export const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
                 borderBottom: "1px solid #e5e7eb",
               }}
             >
+              URLs
+            </th>
+            <th
+              style={{
+                padding: "12px 16px",
+                textAlign: "left",
+                fontWeight: "500",
+                color: "#6b7280",
+                borderBottom: "1px solid #e5e7eb",
+              }}
+            >
+              Tỉ giá
+            </th>
+            <th
+              style={{
+                padding: "12px 16px",
+                textAlign: "left",
+                fontWeight: "500",
+                color: "#6b7280",
+                borderBottom: "1px solid #e5e7eb",
+              }}
+            >
               Status
             </th>
             <th
@@ -117,6 +140,8 @@ export const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
                   padding: "16px",
                   borderBottom: "1px solid #e5e7eb",
                   color: "#6b7280",
+                  fontFamily: "monospace",
+                  fontSize: 13,
                 }}
               >
                 {config.tmnCode}
@@ -134,6 +159,36 @@ export const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
                 >
                   {config.environment}
                 </span>
+              </td>
+              <td style={{ padding: "16px", borderBottom: "1px solid #e5e7eb", fontSize: 12, color: "#374151" }}>
+                {config.returnUrl ? (
+                  <span title={config.returnUrl} style={{ display: "block", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {config.returnUrl}
+                  </span>
+                ) : (
+                  <span style={{ color: "#d1d5db" }}>—</span>
+                )}
+                {config.ipnUrl && (
+                  <span
+                    title={config.ipnUrl}
+                    style={{ display: "block", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#6b7280", marginTop: 2 }}
+                  >
+                    IPN: {config.ipnUrl}
+                  </span>
+                )}
+              </td>
+              <td style={{ padding: "16px", borderBottom: "1px solid #e5e7eb", fontSize: 12 }}>
+                {config.exchangeRates && Object.keys(config.exchangeRates).length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {Object.entries(config.exchangeRates).map(([cur, rate]) => (
+                      <span key={cur} style={{ fontFamily: "monospace", color: "#374151" }}>
+                        1 {cur} = {rate.toLocaleString()} VND
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span style={{ color: "#d1d5db" }}>—</span>
+                )}
               </td>
               <td style={{ padding: "16px", borderBottom: "1px solid #e5e7eb" }}>
                 <span

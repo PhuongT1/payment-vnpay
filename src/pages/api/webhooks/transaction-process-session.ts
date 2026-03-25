@@ -75,13 +75,13 @@ export default transactionProcessSessionWebhook.createHandler(async (req, res, c
     // Extract vnp_* params that storefront sent in transactionProcess.data
     const vnpParams = payload.data?.vnpParams as Record<string, string> | undefined;
 
+    // COD or non-VNPay — no params needed, return success
     if (!vnpParams) {
-      console.error(`❌ [Payment Process] txId=${txId} — No vnpParams in payload.data`);
+      console.log(`✅ [COD Process] txId=${txId} — no vnpParams, returning success`);
       return res.status(200).json({
-        result: "CHARGE_FAILURE",
+        result: "CHARGE_SUCCESS",
         amount: payload.action?.amount ?? 0,
         pspReference: pspRef,
-        message: "Missing VNPay return parameters",
       });
     }
 

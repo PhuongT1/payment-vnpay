@@ -139,7 +139,7 @@ export default paymentGatewayInitializeSessionWebhook.createHandler(
           {
             id: "vnpay.payment.app",
             name: "VNPay",
-            currencies: ["VND", "USD"], // VNPay supports these currencies
+            currencies: ["VND"], // VNPay only supports VND; conversion is handled server-side
             config: [
               {
                 field: "gateway_id",

@@ -36,6 +36,7 @@ const IndexPage = () => {
     vnpBankCode: "" as "" | "VNPAYQR" | "VNBANK" | "INTCARD",
     vnpLocale: "vn" as "vn" | "en",
     environment: "sandbox" as "sandbox" | "production",
+    exchangeRates: { USD: 25000, EUR: 27000 } as Record<string, number>,
   });
 
   const standaloneMode =
@@ -168,6 +169,7 @@ const IndexPage = () => {
         vnpBankCode: newConfig.vnpBankCode || undefined,
         vnpLocale: newConfig.vnpLocale,
         environment: newConfig.environment,
+        exchangeRates: newConfig.exchangeRates,
         isActive: true,
         createdAt: editingId 
           ? configs.find(c => c.id === editingId)?.createdAt || new Date().toISOString()
@@ -196,7 +198,7 @@ const IndexPage = () => {
 
       setShowAddForm(false);
       setEditingId(null);
-      setNewConfig({ name: "", tmnCode: "", hashSecret: "", returnUrl: "", ipnUrl: "", vnpVersion: "2.1.0", vnpCommand: "pay", vnpBankCode: "", vnpLocale: "vn", environment: "sandbox" });
+      setNewConfig({ name: "", tmnCode: "", hashSecret: "", returnUrl: "", ipnUrl: "", vnpVersion: "2.1.0", vnpCommand: "pay", vnpBankCode: "", vnpLocale: "vn", environment: "sandbox", exchangeRates: { USD: 25000, EUR: 27000 } });
     } catch (error) {
       console.error("Error saving config:", error);
       alert("Failed to save configuration. Please try again.");
@@ -237,6 +239,7 @@ const IndexPage = () => {
         vnpBankCode: (config.vnpBankCode || "") as "" | "VNPAYQR" | "VNBANK" | "INTCARD",
         vnpLocale: (config.vnpLocale || "vn") as "vn" | "en",
         environment: config.environment,
+        exchangeRates: config.exchangeRates || { USD: 25000, EUR: 27000 },
       });
       setShowAddForm(true);
     } catch (error) {
@@ -254,6 +257,7 @@ const IndexPage = () => {
         vnpBankCode: (config.vnpBankCode || "") as "" | "VNPAYQR" | "VNBANK" | "INTCARD",
         vnpLocale: (config.vnpLocale || "vn") as "vn" | "en",
         environment: config.environment,
+        exchangeRates: config.exchangeRates || { USD: 25000, EUR: 27000 },
       });
       setShowAddForm(true);
     }
@@ -262,7 +266,7 @@ const IndexPage = () => {
   const handleCancelEdit = () => {
     setShowAddForm(false);
     setEditingId(null);
-    setNewConfig({ name: "", tmnCode: "", hashSecret: "", returnUrl: "", ipnUrl: "", vnpVersion: "2.1.0", vnpCommand: "pay", vnpBankCode: "", vnpLocale: "vn", environment: "sandbox" });
+    setNewConfig({ name: "", tmnCode: "", hashSecret: "", returnUrl: "", ipnUrl: "", vnpVersion: "2.1.0", vnpCommand: "pay", vnpBankCode: "", vnpLocale: "vn", environment: "sandbox", exchangeRates: { USD: 25000, EUR: 27000 } });
   };
 
   const handleDeleteConfig = async (id: string) => {

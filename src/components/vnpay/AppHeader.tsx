@@ -121,45 +121,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               <span>Home</span>
             </button>
 
-            {/* Configuration */}
-            <button
-              type="button"
-              onClick={() => onNavigate("manage")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 14px",
-                background: currentPage === "manage" ? "#e3f2fd" : "transparent",
-                border: "none",
-                borderRadius: "8px",
-                color: currentPage === "manage" ? "#1976d2" : "#6b7280",
-                fontWeight: currentPage === "manage" ? "600" : "500",
-                fontSize: "14px",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (currentPage !== "manage") {
-                  e.currentTarget.style.background = "#f3f4f6";
-                  e.currentTarget.style.color = "#374151";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (currentPage !== "manage") {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#6b7280";
-                }
-              }}
-            >
-              {/* Configuration Icon (Gear) */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 1v6m0 6v6m5.66-13.66l-4.24 4.24m-6.06 6.06l-4.24 4.24M20 12h-6m-2 0H1m15.66 5.66l-4.24-4.24m-6.06-6.06l-4.24-4.24" />
-              </svg>
-              <span>Configuration</span>
-            </button>
-
             {/* Dev Tools Menu */}
             {isLocalHost && (
               <>

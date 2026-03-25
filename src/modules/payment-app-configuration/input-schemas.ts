@@ -18,6 +18,8 @@ export const VNPayConfigEntrySchema = z.object({
   vnpBankCode: z.enum(["VNPAYQR", "VNBANK", "INTCARD"]).optional(),
   vnpLocale: z.enum(["vn", "en"]).default("vn"),
   environment: z.enum(["sandbox", "production"]),
+  // Currency exchange rates to VND (e.g. { USD: 25000, EUR: 27000 })
+  exchangeRates: z.record(z.string(), z.number()).default({ USD: 25000, EUR: 27000 }),
   // Optional: Channel assignment
   channelId: z.string().optional(),
 });

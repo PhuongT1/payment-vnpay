@@ -7,8 +7,8 @@
   "license": "(BSD-3-Clause AND CC-BY-4.0)",
   "type": "module",
   "scripts": {
-    "dev": "next dev -H localhost",
-    "dev:network": "next dev -H 0.0.0.0",
+    "dev": "next dev -H localhost -p 3040",
+    "dev:network": "next dev -H 0.0.0.0 -p 3040",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

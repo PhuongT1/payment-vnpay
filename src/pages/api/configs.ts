@@ -26,6 +26,7 @@ interface VNPayConfig {
   vnpBankCode?: string;
   vnpLocale?: string;
   environment: "sandbox" | "production";
+  exchangeRates?: Record<string, number>;
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -191,7 +192,7 @@ async function handleGet(client: any, req: NextApiRequest, res: NextApiResponse)
 }
 
 async function handlePost(client: any, req: NextApiRequest, res: NextApiResponse) {
-  const { name, tmnCode, hashSecret, environment, returnUrl, ipnUrl, vnpVersion, vnpBankCode, vnpLocale } = req.body;
+  const { name, tmnCode, hashSecret, environment, returnUrl, ipnUrl, vnpVersion, vnpBankCode, vnpLocale, exchangeRates } = req.body;
   
   if (!name || !tmnCode || !hashSecret || !environment) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -210,6 +211,7 @@ async function handlePost(client: any, req: NextApiRequest, res: NextApiResponse
     vnpBankCode: vnpBankCode || undefined,
     vnpLocale: vnpLocale || "vn",
     environment,
+    exchangeRates: exchangeRates || { USD: 25000, EUR: 27000 },
     isActive: true,
     createdAt: new Date().toISOString(),
   };
@@ -227,7 +229,7 @@ async function handlePost(client: any, req: NextApiRequest, res: NextApiResponse
 }
 
 async function handlePut(client: any, req: NextApiRequest, res: NextApiResponse) {
-  const { id, name, tmnCode, hashSecret, environment, isActive, returnUrl, ipnUrl, vnpVersion, vnpBankCode, vnpLocale } = req.body;
+  const { id, name, tmnCode, hashSecret, environment, isActive, returnUrl, ipnUrl, vnpVersion, vnpBankCode, vnpLocale, exchangeRates } = req.body;
   
   if (!id) {
     return res.status(400).json({ error: "Missing config ID" });
@@ -251,6 +253,7 @@ async function handlePut(client: any, req: NextApiRequest, res: NextApiResponse)
     ...(vnpVersion && { vnpVersion }),
     ...(vnpBankCode !== undefined && { vnpBankCode: vnpBankCode || undefined }),
     ...(vnpLocale && { vnpLocale }),
+    ...(exchangeRates !== undefined && { exchangeRates }),
     ...(typeof isActive === 'boolean' && { isActive }),
     updatedAt: new Date().toISOString(),
   };

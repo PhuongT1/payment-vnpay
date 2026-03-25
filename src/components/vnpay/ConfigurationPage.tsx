@@ -27,6 +27,7 @@ interface ConfigFormData {
   vnpBankCode: "" | "VNPAYQR" | "VNBANK" | "INTCARD";
   vnpLocale: "vn" | "en";
   environment: "sandbox" | "production";
+  exchangeRates: Record<string, number>;
 }
 
 interface ConfigurationPageProps {
@@ -68,23 +69,42 @@ export const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
           actionButton={
             !showAddForm &&
             configs.length > 0 && (
-              <button
-                type="button"
-                onClick={onShowAddForm}
-                style={{
-                  padding: "8px 16px",
-                  background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  fontSize: "14px",
-                  boxShadow: "0 2px 8px rgba(0, 102, 204, 0.3)",
-                }}
-              >
-                Open Logs
-              </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={onShowAddForm}
+                  style={{
+                    padding: "8px 16px",
+                    background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    boxShadow: "0 2px 8px rgba(0, 102, 204, 0.3)",
+                    width: "100%",
+                  }}
+                >
+                  + New Configuration
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    padding: "8px 16px",
+                    background: "#fff",
+                    color: "#374151",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                    fontSize: "14px",
+                    width: "100%",
+                  }}
+                >
+                  Open Logs
+                </button>
+              </div>
             )
           }
         >
