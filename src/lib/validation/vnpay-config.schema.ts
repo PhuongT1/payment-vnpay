@@ -58,7 +58,7 @@ export const paymentTestSchema = z.object({
   
   amount: z
     .number()
-    .min(1000, 'Amount must be at least 1,000 VND')
+    .min(1, 'Amount must be at least 1 VND')
     .max(1000000000, 'Amount must not exceed 1,000,000,000 VND'),
   
   orderInfo: z

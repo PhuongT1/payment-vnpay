@@ -40,12 +40,16 @@ export default transactionInitializeSessionWebhook.createHandler(
     console.log(`📥 [Payment Init] checkout=${checkoutId} channel=${sourceObject?.channel?.id} amount=${action?.amount} ${action?.currency}`);
 
     try {
-      // COD — no payment gateway needed, return immediate success
+      // COD — customer pays on delivery, not now.
+      // Return CHARGE_REQUEST so:
+      //   • Checkout.chargeStatus = FULL (pending counts) → checkoutComplete succeeds
+      //   • Order.chargeStatus   = NONE  (pending does NOT count) → order shows "chưa trả tiền"
+      // When the merchant collects payment, call transactionEventReport(CHARGE_SUCCESS).
       if ((payload as any).data?.type === "cod") {
-        console.log(`✅ [COD] checkout=${checkoutId} amount=${action.amount}`);
+        console.log(`✅ [COD] checkout=${checkoutId} amount=${action.amount} → CHARGE_REQUEST (pending, pay on delivery)`);
         return res.status(200).json({
           pspReference: `cod_${Date.now()}`,
-          result: "CHARGE_SUCCESS",
+          result: "CHARGE_REQUEST",
           amount: action.amount,
         });
       }
@@ -139,15 +143,6 @@ export default transactionInitializeSessionWebhook.createHandler(
       const ipAddress = req.headers["x-forwarded-for"] as string || "127.0.0.1";
 
       console.log("💰 Payment:", { amount, currency, orderId });
-
-      if (amount < 5000) {
-        return res.status(200).json({
-          result: "CHARGE_FAILURE",
-          amount: action.amount,
-          pspReference: `err_amount_too_small_${Date.now()}`,
-          message: "Minimum payment amount is 5,000 VND.",
-        });
-      }
 
       if (amount > 1000000000) {
         return res.status(200).json({

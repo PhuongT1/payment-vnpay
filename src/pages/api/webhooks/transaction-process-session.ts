@@ -75,11 +75,11 @@ export default transactionProcessSessionWebhook.createHandler(async (req, res, c
     // Extract vnp_* params that storefront sent in transactionProcess.data
     const vnpParams = payload.data?.vnpParams as Record<string, string> | undefined;
 
-    // COD or non-VNPay — no params needed, return success
+    // COD or non-VNPay — no vnpParams, keep as pending
     if (!vnpParams) {
-      console.log(`✅ [COD Process] txId=${txId} — no vnpParams, returning success`);
+      console.log(`✅ [COD Process] txId=${txId} — no vnpParams, keeping CHARGE_REQUEST (pay on delivery)`);
       return res.status(200).json({
-        result: "CHARGE_SUCCESS",
+        result: "CHARGE_REQUEST",
         amount: payload.action?.amount ?? 0,
         pspReference: pspRef,
       });
