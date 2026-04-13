@@ -97,7 +97,7 @@ export default createManifestHandler({
       author: "Saleor Commerce",
       brand: {
         logo: {
-          default: `${apiBaseURL}/vnpay-logo.svg`,
+          default: `${apiBaseURL}/logo.png`,
         },
       },
     };
